@@ -84,3 +84,7 @@ val preferences =
     .setPreference( SpacesWithinPatternBinders,                   false )
 
 SbtScalariform.scalariformSettings ++ Seq(preferences)
+
+libraryDependencies ++= Seq("org.scalactic" %% "scalactic" % "3.0.3",
+ "org.scalatest" %% "scalatest" % "3.0.3" % "test",
+"org.mockito" % "mockito-core" % "2.8.47" )
