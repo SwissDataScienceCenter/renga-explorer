@@ -16,22 +16,13 @@
  * limitations under the License.
  */
 
+import org.apache.tinkerpop.gremlin.structure.io.IoCore
+import org.janusgraph.core.JanusGraphFactory
 
-import org.scalatest.FlatSpec
+object ImportJSONGraph {
 
-
-
-class ExplorerControllerTest extends FlatSpec {
-
-  val jsonGraph = ImportJSONGraph
-  //val c = jsonGraph.g.V().valueMap().toList()
-
-
+  val graph = JanusGraphFactory.build().set("storage.backend", "inmemory").open()
+  val inputStream = getClass.getResourceAsStream("/resources/test-graph-storage.json")
+  graph.io(IoCore.graphson()).reader().create().readGraph(inputStream, graph)
+  val g = graph.traversal()
 }
-
-/* import scala.collection.JavaConverters._
- val s1 = t.toStream.iterator().asScala
- for (v <- s1) {
-   println(v)
- }
-*/
