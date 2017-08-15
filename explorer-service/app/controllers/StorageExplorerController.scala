@@ -24,7 +24,7 @@ import scala.concurrent.Future
  * Created by jeberle on 25.04.17.
  */
 @Singleton
-class ExplorerController @Inject() (
+class StorageExplorerController @Inject()(
     config:                                         play.api.Configuration,
     jwtVerifier:                                    JWTVerifierProvider,
     wsclient:                                       WSClient,
