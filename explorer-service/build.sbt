@@ -10,7 +10,7 @@ lazy val root = Project(
   base = file(".")
 ).dependsOn(
   core,
-  serviceCommons
+  serviceCommons % "compile->compile;test->test"
 ).enablePlugins(PlayScala)
 
 lazy val core = RootProject(file("../graph-core"))
