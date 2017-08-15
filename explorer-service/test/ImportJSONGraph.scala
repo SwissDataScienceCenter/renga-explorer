@@ -16,13 +16,15 @@
  * limitations under the License.
  */
 
+package helpers
+
+import org.apache.tinkerpop.gremlin.structure.Graph
 import org.apache.tinkerpop.gremlin.structure.io.IoCore
-import org.janusgraph.core.JanusGraphFactory
 
 object ImportJSONGraph {
 
-  val graph = JanusGraphFactory.build().set("storage.backend", "inmemory").open()
-  val inputStream = getClass.getResourceAsStream("/resources/test-graph-storage.json")
-  graph.io(IoCore.graphson()).reader().create().readGraph(inputStream, graph)
-  val g = graph.traversal()
+  def populateGraph( graph: Graph ): Unit = {
+    val inputStream = getClass.getResourceAsStream( "/resources/test-graph-storage.json" )
+    graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
+  }
 }
