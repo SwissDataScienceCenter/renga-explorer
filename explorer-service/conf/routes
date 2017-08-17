@@ -1,0 +1,10 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# https://www.playframework.com/documentation/latest/ScalaRouting
+# ~~~~
+
+GET      /storage/list                            controllers.StorageExplorerController.bucketList
+GET      /storage/file/:id                        controllers.StorageExplorerController.fileMetadata(id: Long)
+GET      /storage/:id/files                       controllers.StorageExplorerController.fileList(id: Long)
+GET      /storage/:id                             controllers.StorageExplorerController.bucketMetadata(id: Long)
+GET      /storage/:id/*path                       controllers.StorageExplorerController.fileMetadatafromPath(id: Long, path: String)
