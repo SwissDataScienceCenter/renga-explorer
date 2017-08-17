@@ -18,17 +18,16 @@
 
 package authorization
 
-import org.scalatest.FlatSpec
-import org.scalatest.mockito.MockitoSugar
+import javax.inject.{ Inject, Singleton }
 
-class JWTVerifierProviderTest extends FlatSpec with MockitoSugar {
+import com.auth0.jwt.algorithms.Algorithm
+import play.api.Configuration
 
-  // be used in other tests
-
-  val Provider = mock[JWTVerifierProvider]
-  "The JWT provider" should "get a public key" in {
-    val token = Provider.get
-    // assert( token.isInstanceOf[JWTVerifier] )
-  }
+@Singleton
+class MockTokenSignerProvider @Inject() (
+    rSAKeyPairProvider: RSAKeyPairProvider,
+    configuration:      Configuration
+) {
+  def get: Algorithm = Algorithm.RSA256( rSAKeyPairProvider.getPublicKey, rSAKeyPairProvider.getPrivateKey )
 
 }
