@@ -58,7 +58,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       implicit val ec = ExecutionContext.global
       val result: Future[Result] = explorerController.bucketList().apply( fakerequest )
       // for { r <- result } yield r
-    //  val content = contentAsString( result )
+      //  val content = contentAsString( result )
       val buckets = g.V().has( "resource:bucket_name" )
       //  buckets.toList = [[v[28704], v[32800]]
     }
