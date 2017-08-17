@@ -28,10 +28,12 @@ import play.api.Application
 import play.api.test.Helpers._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.mvc.{ Result }
+import play.api.mvc.Result
 import play.api.test._
 import ch.datascience.service.security.FakeRequestWithToken._
 import com.auth0.jwt.JWT
+import ch.datascience.service.utils.persistence.scope.MockScope
+import ch.datascience.service.utils.persistence.scope.Scope
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -45,6 +47,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .overrides( bind[JWTVerifierProvider].to[MockJWTVerifierProvider] )
     .overrides( bind[JanusGraphProvider].to[MockJanusGraphProvider] )
+    .overrides( bind[Scope].to[MockScope] )
     .build()
 
   val explorerController: StorageExplorerController = app.injector.instanceOf[StorageExplorerController]
@@ -76,7 +79,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       implicit val ec = ExecutionContext.global
       val result: Future[Result] = explorerController.bucketList().apply( fakerequest )
       // for { r <- result } yield r
-      //  val content = contentAsString( result )
+      val content = contentAsString( result )
       val buckets = g.V().has( "resource:bucket_name" )
       //  buckets.toList = [[v[28704], v[32800]]
     }
