@@ -67,7 +67,7 @@ class StorageExplorerController @Inject() (
 
   def fileList( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).has( Constants.TypeKey, "resource:file" )
+    val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
 
     val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
       Future.sequence( t.toIterable.map( v =>
@@ -79,7 +79,7 @@ class StorageExplorerController @Inject() (
 
   def fileMetadatafromPath( id: Long, path: String ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
-    val t = g.V().has( "resource:filename", path ).as( "data" ).out( "resource:stored_in" ).V( Long.box( id ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
+    val t = g.V().has( "resource:filename", path ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).V( Long.box( id ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
     Future.sequence( graphExecutionContext.execute {
       if ( t.hasNext ) {
@@ -98,7 +98,7 @@ class StorageExplorerController @Inject() (
 
   def fileMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).as( "data" ).out( "resource:stored_in" ).as( "bucket" ).select[Vertex]( "data", "bucket" )
+    val t = g.V( Long.box( id ) ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
     Future.sequence( graphExecutionContext.execute {
       if ( t.hasNext ) {
