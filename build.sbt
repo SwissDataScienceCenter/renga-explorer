@@ -1,22 +1,25 @@
 organization := "ch.datascience"
 version := "0.1.0-SNAPSHOT"
 scalaVersion := "2.11.8"
+name := "renga-explorer"
 
-lazy val projectName = "explorer-service"
-name := projectName
+lazy val root = (project in file("."))
+  .dependsOn(
+    `graph-core`,
+    commons % "compile->compile;test->test"
+  ).enablePlugins(
+    PlayScala
+  )
 
-lazy val root = Project(
-  id   = projectName,
-  base = file(".")
-).dependsOn(
-  core,
-  serviceCommons % "compile->compile;test->test"
-).enablePlugins(PlayScala)
+lazy val rengaGraphUri = uri(s"$rengaGraphRepo#$rengaGraphRef")
+lazy val rengaGraphRepo = "ssh://git@github.com/SwissDataScienceCenter/renga-graph.git"
+lazy val rengaGraphRef = "master"
+lazy val `graph-core` = ProjectRef(rengaGraphUri, "core")
 
-lazy val core = RootProject(file("../graph-core"))
-lazy val serviceCommons = RootProject(file("../service-commons"))
-
-resolvers += DefaultMavenRepository
+lazy val rengaCommonsUri = uri(s"$rengaCommonsRepo#$rengaCommonsRef")
+lazy val rengaCommonsRepo = "ssh://git@github.com/SwissDataScienceCenter/renga-commons.git"
+lazy val rengaCommonsRef = "master"
+lazy val commons = ProjectRef(rengaCommonsUri, "root")
 
 lazy val janusgraph_version = "0.1.0"
 
@@ -25,10 +28,9 @@ libraryDependencies += "org.janusgraph" % "janusgraph-cassandra" % janusgraph_ve
 
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % Test
 
+
 import com.typesafe.sbt.packager.docker._
-
 dockerBaseImage := "openjdk:8-jre-alpine"
-
 dockerCommands ~= { cmds => cmds.head +: ExecCmd("RUN", "apk", "add", "--no-cache", "bash") +: cmds.tail }
 
 // Source code formatting
