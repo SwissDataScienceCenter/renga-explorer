@@ -90,7 +90,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
       val contentBucketIds = for ( item <- content ) yield ( item.id )
 
-      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList // Moving this to top of function does not work
+      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
       val graphBucketIds = for ( item <- buckets ) yield ( item.id() )
 
       ( contentBucketIds.toSet == graphBucketIds.toSet ) mustBe true
@@ -107,14 +107,17 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = explorerController.bucketMetadata( bucketId ).apply( fakerequest )
       val content = contentAsJson( result ).as[PersistedVertex]
 
-      val bucketName = content.properties.get( NamespaceAndName( "resource", "bucket_backend_id" ) ).orNull.values.head.self
+      val bucketName = content.properties.get( NamespaceAndName( "resource", "bucket_name" ) ).orNull.values.head.self
       val bucketBackend = content.properties.get( NamespaceAndName( "resource", "bucket_backend" ) ).orNull.values.head.self
+      val bucketBackedId = content.properties.get( NamespaceAndName( "resource", "bucket_backend_id" ) ).orNull.values.head.self
 
-      val graphBucketName = g.V( graphBucketIds( 1 ) ).values( "resource", "bucket_backend_id" )
-      val graphBucketBackend = g.V( graphBucketIds( 1 ) ).values( "resource:bucket_backend" )
+      val graphBucketName = g.V( graphBucketIds( 1 ) ).values[String]( "resource:bucket_name" ).asScala.toList.head
+      val graphBucketBackend = g.V( graphBucketIds( 1 ) ).values[String]( "resource:bucket_backend" ).asScala.toList.head
+      val graphBucketBackendId = g.V( graphBucketIds( 1 ) ).values[String]( "resource:bucket_backend_id" ).asScala.toList.head
 
       ( bucketName == graphBucketName ) mustBe true
-
+      ( bucketBackend == graphBucketBackend ) mustBe true
+      ( bucketBackedId == graphBucketBackendId ) mustBe true
     }
   }
 
@@ -125,7 +128,8 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val graphBucketIds = for ( item <- buckets ) yield ( item.id() )
 
       val bucketId = graphBucketIds( 1 ).toString().toLong
-      val action = explorerController.fileList( bucketId ).apply( fakerequest )
+
+      val result = explorerController.fileList( bucketId ).apply( fakerequest )
 
     }
   }
@@ -137,12 +141,12 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
     }
   }
-}
-//val c = jsonGraph.g.V().valueMap().toList()
 
-/* import scala.collection.JavaConverters._
- val t = g.V()
- val s1 = t.toStream.iterator().asScala
- for (v <- s1) {
-   println(v)
- }*/
+  "The file meta data from path exploration controller" should {
+    "return all metadata of a file " in {
+      val fileId = 0
+      val path = ""
+      val result = explorerController.fileMetadatafromPath(fileId, path)
+    }
+  }
+}
