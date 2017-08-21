@@ -32,6 +32,8 @@ import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWit
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json._
+import play.api.libs.json.Json
+
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 
