@@ -146,7 +146,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     "return all metadata of a file " in {
       val fileId = 0
       val path = ""
-      val result = explorerController.fileMetadatafromPath(fileId, path)
+      val result = explorerController.fileMetadatafromPath( fileId, path )
     }
   }
 }
