@@ -1,21 +1,26 @@
 package controllers
 
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
-import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider, MockJanusGraphProvider }
+import ch.datascience.graph.elements.persisted.PersistedVertex
+import ch.datascience.graph.elements.persisted.json._
+import ch.datascience.graph.naming.NamespaceAndName
+import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
+import ch.datascience.service.utils.persistence.scope.Scope
+import ch.datascience.test.security.FakeRequestWithToken._
+import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
+import ch.datascience.test.utils.persistence.scope.MockScope
+import com.auth0.jwt.JWT
 import helpers.ImportJSONGraph
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
 import play.api.Application
-import play.api.test.Helpers._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Reads
 import play.api.mvc.Result
-import play.api.test._
-import ch.datascience.service.security.FakeRequestWithToken._
-import com.auth0.jwt.JWT
-import ch.datascience.service.utils.persistence.scope.MockScope
-import ch.datascience.service.utils.persistence.scope.Scope
+import play.api.test.FakeRequest
+import play.api.test.Helpers._
 
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -51,54 +56,75 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The traversal " should {
-    "not be empty" in { g.V().valueMap().hasNext mustBe true }
-
+    "not be empty" in {
+      g.V().valueMap().hasNext mustBe true
+    }
   }
+  implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
+  import scala.collection.JavaConverters._
 
   // get some negative tests on an empty graph
   "The bucket exploration controller" should {
     "return all buckets" in {
       implicit val ec = ExecutionContext.global
       val result: Future[Result] = explorerController.bucketList().apply( fakerequest )
-      // for { r <- result } yield r
-      val content = contentAsString( result )
-      val buckets = g.V().has( "resource:bucket_name" )
-      //  buckets.toList = [[v[28704], v[32800]]
+
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+      val contentBucketIds = for ( item <- content ) yield ( item.id )
+
+      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList // Moving this to top of function does not work
+      val graphBucketIds = for ( item <- buckets ) yield ( item.id() )
+
+      ( contentBucketIds.toSet == graphBucketIds.toSet ) mustBe true
     }
-    /* }
-
-     "The bucket metadata exploration controller" should {
-       "return all metadata of a file" in {
-         val bucket_id = ( "1502777038524" ).toLong //get from graph
-         val action = explorerController.bucketMetadata( bucket_id ).apply( fakerequest )
-       }
-     }
-
-     "The file exploration controller" should {
-       "return all files in a bucket" in {
-         // file location not bucket -> find bucket connected to file location
-         val bucket_id = ( "1502777038524" ).toLong //get from graph
-         val action = explorerController.fileList( bucket_id ).apply( fakerequest )
-
-       }
-     }
-
-     "The file metadata exploration controller" should {
-       "return all metadata of a file" in {
-         val file_id = ( "1502777038524" ).toLong //get from graph
-         val action = explorerController.fileMetadata( file_id ).apply( fakerequest )
-
-       }*/
   }
 
-  //val c = jsonGraph.g.V().valueMap().toList()
+  "The bucket metadata exploration controller" should {
+    "return all metadata of a bucket" in {
+      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
+      val graphBucketIds = for ( item <- buckets ) yield ( item.id() )
 
+      val bucketId = graphBucketIds( 1 ).toString().toLong
+
+      val result = explorerController.bucketMetadata( bucketId ).apply( fakerequest )
+      val content = contentAsJson( result ).as[PersistedVertex]
+
+      val bucketName = content.properties.get( NamespaceAndName( "resource", "bucket_backend_id" ) ).orNull.values.head.self
+      val bucketBackend = content.properties.get( NamespaceAndName( "resource", "bucket_backend" ) ).orNull.values.head.self
+
+      val graphBucketName = g.V( graphBucketIds( 1 ) ).values( "resource", "bucket_backend_id" )
+      val graphBucketBackend = g.V( graphBucketIds( 1 ) ).values( "resource:bucket_backend" )
+
+      ( bucketName == graphBucketName ) mustBe true
+
+    }
+  }
+
+  "The file exploration controller" should {
+    "return all files in a bucket" in {
+      // file location not bucket -> find bucket connected to file location
+      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
+      val graphBucketIds = for ( item <- buckets ) yield ( item.id() )
+
+      val bucketId = graphBucketIds( 1 ).toString().toLong
+      val action = explorerController.fileList( bucketId ).apply( fakerequest )
+
+    }
+  }
+
+  "The file metadata exploration controller" should {
+    "return all metadata of a file" in {
+      val file_id = ( "1502777038524" ).toLong //get from graph
+      val action = explorerController.fileMetadata( file_id ).apply( fakerequest )
+
+    }
+  }
 }
+//val c = jsonGraph.g.V().valueMap().toList()
 
 /* import scala.collection.JavaConverters._
  val t = g.V()
  val s1 = t.toStream.iterator().asScala
  for (v <- s1) {
    println(v)
- }
-*/
+ }*/
