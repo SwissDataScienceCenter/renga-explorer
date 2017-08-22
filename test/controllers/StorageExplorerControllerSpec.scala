@@ -133,17 +133,21 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
       val fileNames = for ( file <- content ) yield ( file.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self )
 
-      val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( "type", "resource:file" ).asScala.toList
+      val graphFiles = g.V( graphBucketIds( 1 ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( "type", "resource:file" ).asScala.toList
       val graphFileNames = for ( file <- graphFiles ) yield ( file.value[String]( "resource:file_name" ) )
       ( content.length == graphFiles.length ) mustBe true
       ( fileNames.toList == graphFileNames ) mustBe true
+
     }
   }
 
   "The file metadata exploration controller" should {
     "return all metadata of a file" in {
-      val file_id = ( "1502777038524" ).toLong //get from graph
-      val action = explorerController.fileMetadata( file_id ).apply( fakerequest )
+      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
+      val graphBucketIds = for ( item <- buckets ) yield ( item.id() )
+      //      val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( "type", "resource:file" ).asScala.toList
+      //    val graphFileNames = for ( file <- graphFiles ) yield ( file.value[String]( "resource:file_name" ) )
+      //      val result = explorerController.fileMetadata( file_id ).apply( fakerequest )
 
     }
   }
