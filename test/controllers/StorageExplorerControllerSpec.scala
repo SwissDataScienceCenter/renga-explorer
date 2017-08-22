@@ -106,6 +106,13 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  def graphBucketMeta( nodeId: String ) = {
+    val graphBucketName = g.V( nodeId ).values[String]( "resource:bucket_name" ).asScala.toList.head
+    val graphBucketBackend = g.V( nodeId ).values[String]( "resource:bucket_backend" ).asScala.toList.head
+    val graphBucketBackendId = g.V( nodeId ).values[String]( "resource:bucket_backend_id" ).asScala.toList.head
+    List( graphBucketName, graphBucketBackend, graphBucketBackendId )
+  }
+
   "The bucket metadata exploration controller" should {
     "return all metadata of a bucket" in {
 
@@ -120,13 +127,11 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val bucketBackend = content.properties.get( NamespaceAndName( "resource", "bucket_backend" ) ).orNull.values.head.self
       val bucketBackedId = content.properties.get( NamespaceAndName( "resource", "bucket_backend_id" ) ).orNull.values.head.self
 
-      val graphBucketName = g.V( graphBucketId ).values[String]( "resource:bucket_name" ).asScala.toList.head
-      val graphBucketBackend = g.V( graphBucketId ).values[String]( "resource:bucket_backend" ).asScala.toList.head
-      val graphBucketBackendId = g.V( graphBucketId ).values[String]( "resource:bucket_backend_id" ).asScala.toList.head
+      val graphBucketMetaData = graphBucketMeta( graphBucketId.toString )
 
-      ( bucketName == graphBucketName ) mustBe true
-      ( bucketBackend == graphBucketBackend ) mustBe true
-      ( bucketBackedId == graphBucketBackendId ) mustBe true
+      ( bucketName == graphBucketMetaData( 0 ) ) mustBe true
+      ( bucketBackend == graphBucketMetaData( 1 ) ) mustBe true
+      ( bucketBackedId == graphBucketMetaData( 2 ) ) mustBe true
     }
   }
 
@@ -177,14 +182,13 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       ( graphFileName == fileName ) mustBe true
 
-      val bucketValues = getBucketMeta( content )
+      val bucketMetaValues = getBucketMeta( content )
 
       val graphFileBucketId = g.V( graphFileId ).out( "resource:has_location" ).out( "resource:stored_in" ).has( Constants.TypeKey, "resource:bucket" ).asScala.toList.head.id()
-      val graphBucketName = g.V( graphFileBucketId ).values[String]( "resource:bucket_name" ).asScala.toList.head
-      val graphBucketBackend = g.V( graphFileBucketId ).values[String]( "resource:bucket_backend" ).asScala.toList.head
+      val graphBucketMetaData = graphBucketMeta( graphFileBucketId.toString )
 
-      ( graphBucketName == ( bucketValues( 0 ) ) ) mustBe true
-      ( graphBucketBackend == ( bucketValues( 1 ) ) ) mustBe true
+      ( graphBucketMetaData( 0 ) == ( bucketMetaValues( 0 ) ) ) mustBe true
+      ( graphBucketMetaData( 1 ) == ( bucketMetaValues( 1 ) ) ) mustBe true
     }
   }
 
@@ -203,7 +207,12 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val fileName = getFileNameMeta( content )
       val graphFileName = g.V().has( "resource:file_name", "file_01.txt" ).values[String]( "resource:file_name" )
 
-      val bucketMeta = getBucketMeta( content )
+      val bucketMetaValues = getBucketMeta( content )
+
+      val graphBucketMetaData = graphBucketMeta( bucketId.id.toString )
+
+      ( graphBucketMetaData( 0 ) == ( bucketMetaValues( 0 ) ) ) mustBe true
+      ( graphBucketMetaData( 1 ) == ( bucketMetaValues( 1 ) ) ) mustBe true
 
     }
   }
