@@ -83,6 +83,10 @@ class StorageExplorerController @Inject() (
 
   }
 
+  /**
+   * Here the id is the bucket id and the path the filename
+   */
+
   def fileMetadatafromPath( id: Long, path: String ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
     val t = g.V().has( "resource:file_name", path ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).V( Long.box( id ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
@@ -149,8 +153,7 @@ class StorageExplorerController @Inject() (
 
   def fileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
-    val filename = g.V( Long.box( id ) ).has( Constants.TypeKey, "resource:file" ).asScala.toList.head.value[String]( "resource:file_name" )
-    val t = g.V().has( "resource:file_name" ).has( "x" ).has( Constants.TypeKey, "resource:file" )
+    val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).outV()
 
     val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
       Future.sequence( t.toIterable.map( v =>
