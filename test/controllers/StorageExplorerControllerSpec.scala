@@ -130,7 +130,13 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val bucketId = graphBucketIds( 1 ).toString().toLong
 
       val result = explorerController.fileList( bucketId ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+      val fileNames = for ( file <- content ) yield ( file.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self )
 
+      val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( "type", "resource:file" ).asScala.toList
+      val graphFileNames = for ( file <- graphFiles ) yield ( file.value[String]( "resource:file_name" ) )
+      ( content.length == graphFiles.length ) mustBe true
+      ( fileNames.toList == graphFileNames ) mustBe true
     }
   }
 
