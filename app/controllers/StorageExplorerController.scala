@@ -98,6 +98,9 @@ class StorageExplorerController @Inject() (
     } ).map( i => Ok( Json.toJson( i.toMap ) ) )
   }
 
+  /*
+  Returns [Map[String, PersistedVertex]] with keys = "data", "bucket"
+   */
   def fileMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).as( "bucket" ).select[Vertex]( "data", "bucket" )
