@@ -84,17 +84,23 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  implicit val ec = ExecutionContext.global
+
+  def getBucketsFromGraph() = {
+    val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
+    for ( item <- buckets ) yield ( item.id() )
+  }
+
   // get some negative tests on an empty graph
   "The bucket exploration controller" should {
     "return all buckets" in {
-      implicit val ec = ExecutionContext.global
-      val result: Future[Result] = explorerController.bucketList().apply( fakerequest )
+
+      val result = explorerController.bucketList().apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       val contentBucketIds = for ( item <- content ) yield ( item.id )
 
-      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
-      val graphBucketIds = for ( item <- buckets ) yield ( item.id() )
+      val graphBucketIds = getBucketsFromGraph()
 
       ( contentBucketIds.toSet == graphBucketIds.toSet ) mustBe true
     }
@@ -102,8 +108,8 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   "The bucket metadata exploration controller" should {
     "return all metadata of a bucket" in {
-      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
-      val graphBucketId = ( for ( item <- buckets ) yield ( item.id() ) ).head
+
+      val graphBucketId = getBucketsFromGraph().head
 
       val bucketId = graphBucketId.toString().toLong
 
@@ -127,16 +133,15 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   "The file exploration controller" should {
     "return all files in a bucket" in {
       // file location not bucket -> find bucket connected to file location
-      val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
-      val graphBucketIds = for ( item <- buckets ) yield ( item.id() )
+      val graphBucketId = getBucketsFromGraph().head
 
-      val bucketId = graphBucketIds( 1 ).toString.toLong
+      val bucketId = graphBucketId.toString.toLong
 
       val result = explorerController.fileList( bucketId ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
-      val fileNames = for ( file <- content ) yield ( file.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self )
+      val fileNames = for ( file <- content ) yield file.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self
 
-      val graphFiles = g.V( graphBucketIds( 1 ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( "type", "resource:file" ).asScala.toList
+      val graphFiles = g.V( graphBucketId ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
       val graphFileNames = for ( file <- graphFiles ) yield ( file.value[String]( "resource:file_name" ) )
       ( content.length == graphFiles.length ) mustBe true
       ( fileNames.toList == graphFileNames ) mustBe true
@@ -144,41 +149,62 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  // Use these helper functions only if content is a map
+
+  def getFileNameMeta( content: Map[String, PersistedVertex] ) = {
+    val contentFile = content.get( "data" ).orNull
+    contentFile.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self
+  }
+
+  def getBucketMeta( content: Map[String, PersistedVertex] ) = {
+    val contentBucket = content.get( "bucket" ).orNull
+    val bucketName = contentBucket.properties.get( NamespaceAndName( "resource", "bucket_name" ) ).orNull.values.head.self
+    val bucketBackend = contentBucket.properties.get( NamespaceAndName( "resource", "bucket_backend" ) ).orNull.values.head.self
+    List( bucketName, bucketBackend )
+  }
+
   "The file metadata exploration controller" should {
     "return all metadata of a file" in {
 
-      val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( "type", "resource:file" ).asScala.toList
+      val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
       val graphFileId = ( for ( file <- graphFiles ) yield ( file.id() ) ).head
 
       val result = explorerController.fileMetadata( graphFileId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[Map[String, PersistedVertex]]
 
-      val contentFile = content.get( "data" ).orNull
-      val fileName = contentFile.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self
+      val fileName = getFileNameMeta( content )
+      val graphFileName = g.V( graphFileId ).values[String]( "resource:file_name" ).asScala.toList.head
 
-      val graphFile = g.V( graphFileId ).values[String]().asScala.toList
+      ( graphFileName == fileName ) mustBe true
 
-      ( graphFile.contains( fileName ) ) mustBe true
+      val bucketValues = getBucketMeta( content )
 
-      val contentBucket = content.get( "bucket" ).orNull
-      val bucketName = contentBucket.properties.get( NamespaceAndName( "resource", "bucket_name" ) ).orNull.values.head.self
-      val bucketBackend = contentBucket.properties.get( NamespaceAndName( "resource", "bucket_backend" ) ).orNull.values.head.self
+      val graphFileBucketId = g.V( graphFileId ).out( "resource:has_location" ).out( "resource:stored_in" ).has( Constants.TypeKey, "resource:bucket" ).asScala.toList.head.id()
+      val graphBucketName = g.V( graphFileBucketId ).values[String]( "resource:bucket_name" ).asScala.toList.head
+      val graphBucketBackend = g.V( graphFileBucketId ).values[String]( "resource:bucket_backend" ).asScala.toList.head
 
-      val graphFileBucket = g.V( graphFileId ).out( "resource:has_location" ).out( "resource:stored_in" ).has( "type", "resource:bucket" ).values[String]().asScala.toList
-
-      ( graphFileBucket.contains( bucketName ) ) mustBe true
-      ( graphFileBucket.contains( bucketBackend ) ) mustBe true
+      ( graphBucketName == ( bucketValues( 0 ) ) ) mustBe true
+      ( graphBucketBackend == ( bucketValues( 1 ) ) ) mustBe true
     }
   }
 
   "The file meta data from path exploration controller" should {
     "return all metadata of a file " in {
 
-      val graphFile = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( "type", "resource:file" ).asScala.toList.head
-      val path = graphFile.values[String]( "resource:file_name" )
-      //   println( "path" + path )
-      //val path = ""
-      //val result = explorerController.fileMetadatafromPath( bucketId, path )
+      // find a file in the graph to use for tests
+      val graphFile = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList.head
+      val path = graphFile.values[String]( "resource:file_name" ).asScala.toList.head
+
+      // a file might be stored in several buckets but the function requires only 1
+      val bucketId = g.V().out( "resource:has_location" ).out( "resource:stored_in" ).asScala.toList.head
+      val result = explorerController.fileMetadatafromPath( bucketId.id.toString.toLong, path ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Map[String, PersistedVertex]]
+
+      val fileName = getFileNameMeta( content )
+      val graphFileName = g.V().has( "resource:file_name", "file_01.txt" ).values[String]( "resource:file_name" )
+
+      val bucketMeta = getBucketMeta( content )
+
     }
   }
 
@@ -191,7 +217,9 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val graphVersions = g.V( graphFileId ).inE( "resource:version_of" ).outV().asScala.toList
 
       val result = explorerController.fileVersions( graphFileId.toString.toLong ).apply( fakerequest )
-      val content = contentAsJson( result )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+      // print( "version content" + content )
     }
   }
+
 }
