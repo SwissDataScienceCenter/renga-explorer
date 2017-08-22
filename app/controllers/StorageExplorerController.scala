@@ -31,18 +31,22 @@ import ch.datascience.service.utils.persistence.reader.VertexReader
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json._
 import play.api.libs.json.Json
-
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 
+import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
 /**
  * Created by jeberle on 25.04.17.
  */
+
+/**
+ * Continued by 3C111 on 22.08.2017
+ */
+
 @Singleton
 class StorageExplorerController @Inject() (
     config:                                         play.api.Configuration,
@@ -81,7 +85,7 @@ class StorageExplorerController @Inject() (
 
   def fileMetadatafromPath( id: Long, path: String ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
-    val t = g.V().has( "resource:filename", path ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).V( Long.box( id ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
+    val t = g.V().has( "resource:file_name", path ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).V( Long.box( id ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
     Future.sequence( graphExecutionContext.execute {
       if ( t.hasNext ) {
@@ -141,6 +145,19 @@ class StorageExplorerController @Inject() (
           NotAcceptable // to differentiate from not found
       case None => NotFound
     }
+  }
+
+  def fileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    val g = graphTraversalSource
+    val filename = g.V( Long.box( id ) ).has( Constants.TypeKey, "resource:file" ).asScala.toList.head.value[String]( "resource:file_name" )
+    val t = g.V().has( "resource:file_name" ).has( "x" ).has( Constants.TypeKey, "resource:file" )
+
+    val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
+      Future.sequence( t.toIterable.map( v =>
+        vertexReader.read( v ) ).toSeq )
+    }
+    future.map( s => Ok( Json.toJson( s ) ) )
+
   }
 
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
