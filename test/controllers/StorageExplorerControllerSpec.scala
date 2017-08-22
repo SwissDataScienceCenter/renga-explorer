@@ -32,6 +32,7 @@ trait SpecSetup {
 }
 
 class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter with SpecSetup {
+
   // Set the stage
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .overrides( bind[JWTVerifierProvider].to[MockJWTVerifierProvider] )
@@ -70,8 +71,8 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     "return all buckets" in {
       implicit val ec = ExecutionContext.global
       val result: Future[Result] = explorerController.bucketList().apply( fakerequest )
-
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
       val contentBucketIds = for ( item <- content ) yield ( item.id )
 
       val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
@@ -154,21 +155,25 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   "The file meta data from path exploration controller" should {
     "return all metadata of a file " in {
-      val fileId = 0
-      val path = ""
-      val result = explorerController.fileMetadatafromPath( fileId, path )
+
+      val graphFile = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( "type", "resource:file" ).asScala.toList.head
+      val path = graphFile.values[String]( "resource:file_name" )
+      //   println( "path" + path )
+      //val path = ""
+      //val result = explorerController.fileMetadatafromPath( bucketId, path )
     }
   }
 
   "The file version exploration controller" should {
     "return all versions of a file " in {
-      val result = explorerController.fileVersions( 333.toString.toLong )
+
       val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
       val graphFileId = ( for ( file <- graphFiles ) yield ( file.id() ) ).head
-      val filename = g.V( graphFileId ).has( Constants.TypeKey, "resource:file" ).asScala.toList.head.value[String]( "resource:file_name" )
 
-      print( filename )
+      val graphVersions = g.V( graphFileId ).inE( "resource:version_of" ).outV().asScala.toList
 
+      val result = explorerController.fileVersions( graphFileId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result )
     }
   }
 }
