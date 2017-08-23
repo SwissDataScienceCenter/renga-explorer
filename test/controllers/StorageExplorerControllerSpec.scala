@@ -86,6 +86,30 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   implicit val ec = ExecutionContext.global
 
+  "The return all nodes controller" should {
+    "return all nodes in the graph" in {
+      val result = explorerController.retieveAllNodes().apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      val graphNodes = g.V().asScala.toList
+
+      ( content.length == graphNodes.length ) mustBe true
+      ( content.toSet == graphNodes.toSet ) mustBe true
+    }
+  }
+
+  "The return all edge controller" should {
+    "return all edges in the graph" in {
+      val result = explorerController.retieveAllEdges().apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      val graphEdges = g.E().asScala.toList
+
+      ( content.length == graphEdges.length ) mustBe true
+      ( content.toSet == graphEdges.toSet ) mustBe true
+    }
+  }
+
   def getBucketsFromGraph() = {
     val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
     for ( item <- buckets ) yield ( item.id() )
@@ -161,17 +185,16 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val graphFileId = ( for ( file <- graphFiles ) yield ( file.id() ) ).head
 
       val graphVersions = g.V( graphFileId ).inE( "resource:version_of" ).outV().asScala.toList
-
-      println( graphVersions.head.value[String]( "system: creation_time" ) )
+      val graphVersionTimeStamps = for ( node <- graphVersions ) yield node.value[Long]( "system:creation_time" )
 
       val result = explorerController.fileVersions( graphFileId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+      val contentTimeStamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
 
       ( content.length == graphVersions.length ) mustBe true
 
-      val contentTimes = for ( node <- content ) yield node.properties //.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
-      print
-      //println( graphTimes, contentTimes.toSet )
+      ( contentTimeStamps.toSet == graphVersionTimeStamps.toSet ) mustBe true
+
     }
   }
 

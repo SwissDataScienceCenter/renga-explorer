@@ -22,8 +22,10 @@ import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.Constants
+import ch.datascience.graph.elements.Edge
 import ch.datascience.graph.elements.persisted.PersistedVertex
-import ch.datascience.graph.elements.persisted.json.PersistedVertexFormat
+import ch.datascience.graph.elements.persisted.json.{ PersistedEdgeFormat, PersistedVertexFormat }
+import ch.datascience.graph.elements.tinkerpop_mappers.EdgeReader
 import ch.datascience.graph.naming.NamespaceAndName
 import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
@@ -35,7 +37,6 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 
-import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
@@ -58,6 +59,28 @@ class StorageExplorerController @Inject() (
 ) extends Controller
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
+
+  def retieveAllNodes: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    val g = graphTraversalSource
+    val t = g.V()
+
+    val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
+      Future.sequence( t.toIterable.map( v =>
+        vertexReader.read( v ) ).toSeq )
+    }
+    future.map( s => Ok( Json.toJson( s ) ) )
+  }
+  implicit val edgeReader: EdgeReader
+  def retieveAllEdges: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    val g = graphTraversalSource
+    val t = g.E()
+
+    val future: Future[Seq[Edge]] = graphExecutionContext.execute {
+      Future.sequence( t.toIterable.map( v =>
+        edgeReader.read( v ) ).toSeq )
+    }
+    future.map( s => Ok( Json.toJson( s ) ) )
+  }
 
   def bucketList: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
@@ -164,5 +187,6 @@ class StorageExplorerController @Inject() (
   }
 
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
+  private[this] implicit lazy val edgeFormat = PersistedEdgeFormat
 
 }
