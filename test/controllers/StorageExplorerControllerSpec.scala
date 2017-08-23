@@ -154,6 +154,27 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  "The file version exploration controller" should {
+    "return all versions of a file " in {
+
+      val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
+      val graphFileId = ( for ( file <- graphFiles ) yield ( file.id() ) ).head
+
+      val graphVersions = g.V( graphFileId ).inE( "resource:version_of" ).outV().asScala.toList
+
+      println( graphVersions.head.value[String]( "system: creation_time" ) )
+
+      val result = explorerController.fileVersions( graphFileId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      ( content.length == graphVersions.length ) mustBe true
+
+      val contentTimes = for ( node <- content ) yield node.properties //.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
+      print
+      //println( graphTimes, contentTimes.toSet )
+    }
+  }
+
   // Use these helper functions only if content is a map
 
   def getFileNameMeta( content: Map[String, PersistedVertex] ) = {
@@ -169,6 +190,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The file metadata exploration controller" should {
+
     "return all metadata of a file" in {
 
       val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
@@ -187,8 +209,8 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val graphFileBucketId = g.V( graphFileId ).out( "resource:has_location" ).out( "resource:stored_in" ).has( Constants.TypeKey, "resource:bucket" ).asScala.toList.head.id()
       val graphBucketMetaData = graphBucketMeta( graphFileBucketId.toString )
 
-      ( graphBucketMetaData( 0 ) == ( bucketMetaValues( 0 ) ) ) mustBe true
-      ( graphBucketMetaData( 1 ) == ( bucketMetaValues( 1 ) ) ) mustBe true
+      ( graphBucketMetaData( 0 ) == bucketMetaValues( 0 ) ) mustBe true
+      ( graphBucketMetaData( 1 ) == bucketMetaValues( 1 ) ) mustBe true
     }
   }
 
@@ -214,20 +236,6 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       ( graphBucketMetaData( 0 ) == ( bucketMetaValues( 0 ) ) ) mustBe true
       ( graphBucketMetaData( 1 ) == ( bucketMetaValues( 1 ) ) ) mustBe true
 
-    }
-  }
-
-  "The file version exploration controller" should {
-    "return all versions of a file " in {
-
-      val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
-      val graphFileId = ( for ( file <- graphFiles ) yield ( file.id() ) ).head
-
-      val graphVersions = g.V( graphFileId ).inE( "resource:version_of" ).outV().asScala.toList
-
-      val result = explorerController.fileVersions( graphFileId.toString.toLong ).apply( fakerequest )
-      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
-      // print( "version content" + content )
     }
   }
 
