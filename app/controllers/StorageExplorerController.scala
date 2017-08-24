@@ -42,7 +42,7 @@ class StorageExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
-  def retieveAllNodes: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+/*  def retieveAllNodes: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
     val t = g.V()
 
@@ -62,7 +62,7 @@ class StorageExplorerController @Inject() (
         edgeReader.read( v ) ).toSeq )
     }
     future.map( s => Ok( Json.toJson( s ) ) )
-  }
+  }*/
 
   def bucketList: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val g = graphTraversalSource
@@ -169,6 +169,6 @@ class StorageExplorerController @Inject() (
   }
 
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
-  private[this] implicit lazy val edgeFormat = PersistedEdgeFormat
+
 
 }
