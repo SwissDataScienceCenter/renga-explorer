@@ -8,4 +8,5 @@ GET      /storage/file/:id                        controllers.StorageExplorerCon
 GET      /storage/:id/files                       controllers.StorageExplorerController.fileList(id: Long)
 GET      /storage/:id                             controllers.StorageExplorerController.bucketMetadata(id: Long)
 GET      /storage/:id/*path                       controllers.StorageExplorerController.fileMetadatafromPath(id: Long, path: String)
-GET      /storage/file/:id/versions               controllers.StorageExplorerController.fileVersions( id: Long )
+GET      /storage/file/:id/versions               controllers.StorageExplorerController.retrievefileVersions( id: Long )
+GET      /storage/file/:date1,date2               controllers.StorageExplorerController.retrieveFilesDate( date1: Long, date2: Long )

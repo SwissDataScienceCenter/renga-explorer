@@ -30,6 +30,7 @@ import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
 import helpers.ImportJSONGraph
+import org.apache.tinkerpop.gremlin.process.traversal.P
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -86,9 +87,9 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   implicit val ec = ExecutionContext.global
 
-/*  "The return all nodes controller" should {
+  /*  "The return all nodes controller" should {
     "return all nodes in the graph" in {
-      val result = explorerController.retieveAllNodes().apply( fakerequest )
+      val result = explorerController.retrieveGraphSubset().apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       val graphNodes = g.V().asScala.toList
@@ -98,21 +99,11 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
-  "The return all edge controller" should {
-    "return all edges in the graph" in {
-      val result = explorerController.retieveAllEdges().apply( fakerequest )
-      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
-
-      val graphEdges = g.E().asScala.toList
-
-      ( content.length == graphEdges.length ) mustBe true
-      ( content.toSet == graphEdges.toSet ) mustBe true
-    }
-  }*/
+*/
 
   def getBucketsFromGraph() = {
     val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
-    for ( item <- buckets ) yield ( item.id() )
+    for ( item <- buckets ) yield item.id()
   }
 
   // get some negative tests on an empty graph
@@ -142,7 +133,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val graphBucketId = getBucketsFromGraph().head
 
-      val bucketId = graphBucketId.toString().toLong
+      val bucketId = graphBucketId.toString.toLong
 
       val result = explorerController.bucketMetadata( bucketId ).apply( fakerequest )
       val content = contentAsJson( result ).as[PersistedVertex]
@@ -171,7 +162,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val fileNames = for ( file <- content ) yield file.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self
 
       val graphFiles = g.V( graphBucketId ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
-      val graphFileNames = for ( file <- graphFiles ) yield ( file.value[String]( "resource:file_name" ) )
+      val graphFileNames = for ( file <- graphFiles ) yield file.value[String]( "resource:file_name" )
       ( content.length == graphFiles.length ) mustBe true
       ( fileNames.toList == graphFileNames ) mustBe true
 
@@ -182,12 +173,12 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     "return all versions of a file " in {
 
       val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
-      val graphFileId = ( for ( file <- graphFiles ) yield ( file.id() ) ).head
+      val graphFileId = ( for ( file <- graphFiles ) yield file.id() ).head
 
       val graphVersions = g.V( graphFileId ).inE( "resource:version_of" ).outV().asScala.toList
       val graphVersionTimeStamps = for ( node <- graphVersions ) yield node.value[Long]( "system:creation_time" )
 
-      val result = explorerController.fileVersions( graphFileId.toString.toLong ).apply( fakerequest )
+      val result = explorerController.retrievefileVersions( graphFileId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
       val contentTimeStamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
 
@@ -217,7 +208,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     "return all metadata of a file" in {
 
       val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
-      val graphFileId = ( for ( file <- graphFiles ) yield ( file.id() ) ).head
+      val graphFileId = ( for ( file <- graphFiles ) yield file.id() ).head
 
       val result = explorerController.fileMetadata( graphFileId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[Map[String, PersistedVertex]]
@@ -256,8 +247,32 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val graphBucketMetaData = graphBucketMeta( bucketId.id.toString )
 
-      ( graphBucketMetaData( 0 ) == ( bucketMetaValues( 0 ) ) ) mustBe true
-      ( graphBucketMetaData( 1 ) == ( bucketMetaValues( 1 ) ) ) mustBe true
+      ( graphBucketMetaData( 0 ) == bucketMetaValues( 0 ) ) mustBe true
+      ( graphBucketMetaData( 1 ) == bucketMetaValues( 1 ) ) mustBe true
+
+    }
+  }
+
+  "The date search controller " should {
+    "return all nodes with a specific timestamp" in {
+      val graphFile = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList
+      val dates = graphFile.head.values[Long]( "system:creation_time" ).asScala.toList
+
+      val date1 = dates.head - 1
+      val date2 = dates.last + 1
+      val result = explorerController.retrieveFilesDate( date1, date2 ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      val graph = g.V().has( "system:creation_time", P.between( date1, date2 ) ).values[String]().asScala.toList
+
+      //( graph.length == content.length ) mustBe true
+      //      ( graph.toSet == content.toSet ) mustBe true
+      println( graph, content )
+    }
+  }
+
+  "The graph metadata controller " should {
+    "return the count of all edges and nodes" in {
 
     }
   }
