@@ -86,7 +86,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   implicit val ec = ExecutionContext.global
 
-  "The return all nodes controller" should {
+/*  "The return all nodes controller" should {
     "return all nodes in the graph" in {
       val result = explorerController.retieveAllNodes().apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
@@ -108,7 +108,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       ( content.length == graphEdges.length ) mustBe true
       ( content.toSet == graphEdges.toSet ) mustBe true
     }
-  }
+  }*/
 
   def getBucketsFromGraph() = {
     val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
