@@ -152,34 +152,29 @@ paths:
         404:
           description: 'File not found'
   /storage/file/:date1-date2:
-     get:
-        tags:
-          - 'Storage'
-        summary: 'Files timerange'
-        description:  'Get all timestamped vertices between date1 and date2'
     get:
       tags:
-        - 'Storage'
-      summary: 'File versions'
-      description:  'Get all version from a file'
+         - 'Storage'
+      summary: 'Files timerange'
+      description:  'Get all timestamped vertices between date1 and date2'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
-      - name: date1
-        in: path
-        description: 'Lower timestamp'
-        required: true
-        type: integer
-        format: int64
-      - name: date1
-        in: path
-        description: 'Lower timestamp'
-        required: true
-        type: integer
-        format: int64
-      responses:
-        200:
-          description: 'Ok'
+        - name: Authorization
+          in: header
+          description: 'Bearer token'
+          required: true
+          type: string
+        - name: date1
+          in: path
+          description: 'Lower timestamp'
+          required: true
+          type: integer
+          format: int64
+        - name: date1
+          in: path
+          description: 'Lower timestamp'
+          required: true
+          type: integer
+          format: int64
+        responses:
+          200:
+            description: 'Ok'
