@@ -1,8 +1,8 @@
 #!/bin/bash
 
-sbt ++$TRAVIS_SCALA_VERSION publish
-
-sbt ++$TRAVIS_SCALA_VERSION docker:publishLocal
 docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" $DOCKER_REGISTRY
-docker tag renga-explorer:0.1.0-SNAPSHOT $DOCKER_REGISTRY/swissdatasciencecenter/images/renga-explorer:0.1.0-SNAPSHOT
-docker push $DOCKER_REGISTRY/swissdatasciencecenter/images/renga-explorer:0.1.0-SNAPSHOT
+sbt ++$TRAVIS_SCALA_VERSION \
+  "set dockerRepository := scala.sys.env.get(\"DOCKER_REGISTRY\")" \
+  "set dockerUsername := scala.sys.env.get(\"DOCKER_REPOSITORY\")" \
+  "set dockerUpdateLatest := ( scala.sys.env.getOrElse(\"DOCKER_PUSH_LATEST\", \"\").toLowerCase == \"true\" )" \
+  "docker:publish"
