@@ -100,3 +100,81 @@ paths:
       responses:
         200:
           description: 'Ok'
+  /storage/{bucket_id}/{path}:
+    get:
+      tags:
+        - 'Storage'
+      summary: 'Access file metadata'
+      description: 'File metadata from bucket and path'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      - name: bucket_id
+        in: path
+        description: 'Bucket graph id'
+        required: true
+        type: integer
+        format: int64
+      - name: path
+        in: path
+        description: 'File path'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+        404:
+          description: 'Bucket or path not found'
+  /storage/file/{file_id}/versions:
+    get:
+      tags:
+        - 'Storage'
+      summary: 'File versions'
+      description:  'Get all version from a file'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      - name: file_id
+        in: path
+        description: 'File graph id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+        404:
+          description: 'File not found'
+  /storage/file/timestamps/{date1}/{date2}:
+    get:
+      tags:
+         - 'Storage'
+      summary: 'Files timerange'
+      description:  'Get all timestamped vertices between date1 and date2'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      - name: date1
+        in: path
+        description: 'Lower timestamp'
+        required: true
+        type: integer
+        format: int64
+      - name: date2
+        in: path
+        description: 'Upper timestamp'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
