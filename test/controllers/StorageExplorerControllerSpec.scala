@@ -245,11 +245,14 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = explorerController.retrieveFilesDate( date1, date2 ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
-      val graph = g.V().has( "system:creation_time", P.between( date1, date2 ) ).values[String]().asScala.toList
+      val graph = g.V().has( "system:creation_time", P.between( date1, date2 ) ).asScala.toList
 
-      //( graph.length == content.length ) mustBe true
-      //      ( graph.toSet == content.toSet ) mustBe true
-      println( graph, content )
+      ( graph.length == content.length ) mustBe true
+
+      val contentTimestamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
+      val graphTimestamps = for ( vertex <- graph ) yield vertex.value[Long]( "system:creation_time" )
+
+      ( contentTimestamps.toSet == graphTimestamps.toSet ) mustBe true
     }
   }
 
