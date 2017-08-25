@@ -14,7 +14,7 @@ resolvers += "SDSC Snapshots" at "https://testing.datascience.ch:18081/repositor
 
 lazy val renga_version = "0.1.0-SNAPSHOT"
 libraryDependencies += "ch.datascience" %% "renga-graph-core" % renga_version
-libraryDependencies += "ch.datascience" %% "renga-commons" % renga_version
+libraryDependencies += "ch.datascience" %% "renga-commons" % renga_version exclude("org.slf4j", "slf4j-log4j12") exclude("org.slf4j", "slf4j-nop")
 
 lazy val rengaCommonsUri = uri(s"$rengaCommonsRepo#$rengaCommonsRef")
 lazy val rengaCommonsRepo = "ssh://git@github.com/SwissDataScienceCenter/renga-commons.git"
