@@ -16,15 +16,24 @@
  * limitations under the License.
  */
 
-package helpers
+package controllers
 
-import org.apache.tinkerpop.gremlin.structure.Graph
-import org.apache.tinkerpop.gremlin.structure.io.IoCore
+import javax.inject.{ Inject, Singleton }
 
-object ImportJSONGraph {
+import ch.datascience.service.swagger.{ SwaggerControllerHelper, YamlHelper }
+import play.api.libs.json.JsObject
+import play.api.mvc._
 
-  def populateGraph( graph: Graph ): Unit = {
-    val inputStream = getClass.getResourceAsStream( "/test-graph-storage.json" )
-    graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
+@Singleton
+class SwaggerController @Inject() () extends Controller with SwaggerControllerHelper {
+
+  def swaggerSpec: JsObject = _swaggerSpec
+
+  private[this] lazy val _swaggerSpec: JsObject = loadSwaggerSpec
+
+  private[this] def loadSwaggerSpec = {
+    val is = getClass.getResourceAsStream( "/swagger.yml" )
+    YamlHelper.convertYamlToJson( is ).as[JsObject]
   }
+
 }
