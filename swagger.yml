@@ -1,0 +1,102 @@
+# API spec in YAML
+swagger: '2.0'
+info:
+  title: Graph explorer API
+  description: |
+    Graph explorer API specification
+  version: '0.0.1'
+# Host and schemes are injected by the service
+# will be prefixed to all paths
+basePath: /api/explorer
+produces:
+  - application/json
+consumes:
+  - application/json
+tags:
+- name: 'Storage'
+  description: 'File explorer'
+paths:
+  /storage/{bucket_id}:
+    get:
+      tags:
+      - 'Storage'
+      summary: 'Bucket metadata'
+      description: 'Access bucket metadata'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      - name: bucket_id
+        in: path
+        description: 'Bucket graph id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+        404:
+          description: 'Bucket not found'
+  /storage/file/{file_id}:
+    get:
+      tags:
+      - 'Storage'
+      summary: 'File metadata'
+      description: 'Access file metadata'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      - name: file_id
+        in: path
+        description: 'File graph id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+        404:
+          description: 'File not found'
+  /storage/{bucket_id}/files:
+    get:
+      tags:
+      - 'Storage'
+      summary: 'Bucket files'
+      description: 'List all files in a bucket'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      - name: bucket_id
+        in: path
+        description: 'Bucket graph id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+        404:
+          description: 'Bucket not found'
+  /storage/list:
+    get:
+      tags:
+      - 'Storage'
+      summary: 'Bucket list'
+      description: 'List all available buckets'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
