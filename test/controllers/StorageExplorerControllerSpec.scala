@@ -27,12 +27,7 @@ import play.api.test.Helpers._
 import scala.collection.JavaConverters._
 import scala.concurrent.{ ExecutionContext, Future }
 
-trait SpecSetup {
-  //move stuff here
-  val tokenBuilder = JWT.create()
-}
-
-class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter with SpecSetup {
+class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
   // Set the stage
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
@@ -47,8 +42,8 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   val g = app.injector.instanceOf[JanusGraphTraversalSourceProvider].get
 
   val tokenSignerProvider = app.injector.instanceOf[MockTokenSignerProvider]
+  val tokenBuilder = JWT.create()
   val token = tokenBuilder.sign( tokenSignerProvider.get )
-
   val fakerequest = FakeRequest().withToken( token )
 
   implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
@@ -69,20 +64,18 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   implicit val ec = ExecutionContext.global
 
-  /*  "The return all nodes controller" should {
-    "return all nodes in the graph" in {
-      val result = explorerController.retrieveGraphSubset().apply( fakerequest )
-      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+  "The return graph subset controller" should {
+    "return a subset of nodes and edges from the graph" in {
+      // val result = explorerController.retrieveGraphSubset().apply( fakerequest )
+      //  val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       val graphNodes = g.V().asScala.toList
+      val n = 10
+      //val t = g.V().as( "node1" ).outE().as( "edge" ).inV().as( "node2" ).select[PersistedVertex]( "node1", "edge", "node2" ).limit( n ).asScala.toList
 
-      ( content.length == graphNodes.length ) mustBe true
-      ( content.toSet == graphNodes.toSet ) mustBe true
     }
+
   }
-
-*/
-
   def getBucketsFromGraph() = {
     val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
     for ( item <- buckets ) yield item.id()
@@ -253,12 +246,6 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val graphTimestamps = for ( vertex <- graph ) yield vertex.value[Long]( "system:creation_time" )
 
       ( contentTimestamps.toSet == graphTimestamps.toSet ) mustBe true
-    }
-  }
-
-  "The graph metadata controller " should {
-    "return the count of all edges and nodes" in {
-
     }
   }
 
