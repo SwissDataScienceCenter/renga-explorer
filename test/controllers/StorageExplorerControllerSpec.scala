@@ -20,12 +20,11 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Reads
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 
 class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
@@ -64,16 +63,6 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   implicit val ec = ExecutionContext.global
 
-  "The return graph subset controller" should {
-    "return a subset of nodes and edges from the graph" in {
-      val result = explorerController.retrieveGraphSubset().apply( fakerequest )
-      val content = contentAsJson( result )
-
-      val entry = content
-
-    }
-
-  }
   def getBucketsFromGraph() = {
     val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
     for ( item <- buckets ) yield item.id()
