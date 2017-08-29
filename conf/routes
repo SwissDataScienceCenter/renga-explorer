@@ -1,4 +1,4 @@
-# Routes
+c# Routes
 # This file defines all application routes (Higher priority routes first)
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
@@ -13,3 +13,5 @@ GET      /storage/:id                             controllers.StorageExplorerCon
 GET      /storage/:id/*path                       controllers.StorageExplorerController.fileMetadatafromPath(id: Long, path: String)
 GET      /storage/file/:id/versions               controllers.StorageExplorerController.retrievefileVersions( id: Long )
 GET      /storage/file/timestamps/:date1/:date2   controllers.StorageExplorerController.retrieveFilesDate( date1: Long, date2: Long )
+
+GET      /storage/graph                           controllers.GenericExplorerController.retrieveGraphSubset
