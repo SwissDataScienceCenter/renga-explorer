@@ -84,12 +84,10 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   "The return graph subset controller" should {
     "return a subset of nodes and edges from the graph" in {
-      // val result = explorerController.retrieveGraphSubset().apply( fakerequest )
-      //  val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+      val result = explorerController.retrieveGraphSubset().apply( fakerequest )
+      val content = contentAsJson( result )
 
-      val graphNodes = g.V().asScala.toList
-      val n = 10
-      //val t = g.V().as( "node1" ).outE().as( "edge" ).inV().as( "node2" ).select[PersistedVertex]( "node1", "edge", "node2" ).limit( n ).asScala.toList
+      val entry = content
 
     }
 
@@ -266,5 +264,4 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       ( contentTimestamps.toSet == graphTimestamps.toSet ) mustBe true
     }
   }
-
 }
