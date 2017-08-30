@@ -14,4 +14,5 @@ GET      /storage/:id/*path                       controllers.StorageExplorerCon
 GET      /storage/file/:id/versions               controllers.StorageExplorerController.retrievefileVersions( id: Long )
 GET      /storage/file/timestamps/:date1/:date2   controllers.StorageExplorerController.retrieveFilesDate( date1: Long, date2: Long )
 
-GET      /storage/graph                           controllers.GenericExplorerController.retrieveGraphSubset
+GET      /storage/graph/                          controllers.GenericExplorerController.retrieveGraphSubset
+GET      /storage/node/:id                        controllers.GenericExplorerController.retrieveNodeMetaData( id: Long )
