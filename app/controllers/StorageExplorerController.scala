@@ -4,7 +4,7 @@ import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.Constants
-import ch.datascience.graph.elements.persisted.{ PersistedVertex }
+import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json.{ PersistedEdgeFormat, PersistedVertexFormat }
 import ch.datascience.graph.naming.NamespaceAndName
 import ch.datascience.service.security.ProfileFilterAction
@@ -16,6 +16,7 @@ import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
+import play.api.Logger
 import play.api.mvc._
 
 import scala.collection.JavaConversions._
@@ -44,6 +45,7 @@ class StorageExplorerController @Inject() (
 
   def retrieveFilesDate( date1: Long, date2: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
 
+    Logger.debug( "Requests to retrieve all files between " + date1 + " and " + date2 )
     val g = graphTraversalSource
     val t = g.V().has( "system:creation_time", P.between( date1, date2 ) )
 
@@ -56,6 +58,7 @@ class StorageExplorerController @Inject() (
   }
 
   def bucketList: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve all buckets in the graph" )
     val g = graphTraversalSource
     val t = g.V().has( Constants.TypeKey, "resource:bucket" )
 
@@ -68,6 +71,7 @@ class StorageExplorerController @Inject() (
   }
 
   def fileList( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve all files in bucket with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
 
@@ -83,6 +87,7 @@ class StorageExplorerController @Inject() (
    * Here the id is the bucket id and the path the filename
    */
   def fileMetadatafromPath( id: Long, path: String ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve file metadata from bucket with " + id + " with path " + path )
     val g = graphTraversalSource
     val t = g.V().has( "resource:file_name", path ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).V( Long.box( id ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
@@ -105,6 +110,7 @@ class StorageExplorerController @Inject() (
   Returns [Map[String, PersistedVertex]] with keys = "data", "bucket"
    */
   def fileMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve file metadata from file with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
@@ -124,6 +130,7 @@ class StorageExplorerController @Inject() (
   }
 
   def bucketMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve bucket metadata from bucket with " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) )
 
@@ -146,6 +153,7 @@ class StorageExplorerController @Inject() (
     }
   }
   def retrievefileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve all file versions from file with id" + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).outV()
 

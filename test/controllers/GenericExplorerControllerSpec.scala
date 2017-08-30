@@ -1,10 +1,8 @@
 package controllers
 
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
-import ch.datascience.graph.Constants
 import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json._
-import ch.datascience.graph.naming.NamespaceAndName
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.scope.Scope
 import ch.datascience.test.security.FakeRequestWithToken._
@@ -12,7 +10,6 @@ import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
 import helpers.ImportJSONGraph
-import org.apache.tinkerpop.gremlin.process.traversal.P
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -20,12 +17,15 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Reads
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ ExecutionContext, Future }
+
+
+/**
+ * Continued by 3C111 on 29.08.2017
+ */
 
 class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
@@ -60,10 +60,26 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     "return a subset of nodes and edges from the graph" in {
       val result = genericController.retrieveGraphSubset().apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[GraphSubSet]]
+      val firstSubset = content.head
 
-      println( content( 0 ) )
+      firstSubset.node1.properties.values.isEmpty mustBe false
+      firstSubset.edge.id.nonEmpty mustBe true
+      firstSubset.node2.properties.values.isEmpty mustBe false
+    }
+  }
+
+  "The generic node metadata controller " should {
+    "return a specific nodes metadata" in {
+
+      val nodeId = g.V().asScala.toList.head.id
+      val nodeMetaData = g.V( nodeId )
+      val result = genericController.retrieveNodeMetaData( nodeId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[PersistedVertex]
+
+      content.properties.isEmpty mustBe false
+
+      // TODO invent a test that is applicable to all cases
 
     }
-
   }
 }
