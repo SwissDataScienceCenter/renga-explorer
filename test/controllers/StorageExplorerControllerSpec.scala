@@ -235,4 +235,23 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       ( contentTimestamps.toSet == graphTimestamps.toSet ) mustBe true
     }
   }
+
+  "The user-search controller " should {
+    "return all vertices owned by that user" in {
+
+      val graphUserId = g.V().has( "resource:owner" ).asScala.toList.head.values[String]( "resource:owner" ).asScala.toList.head
+      val t = g.V().has( "resource:owner", graphUserId ).asScala.toSeq
+
+      val result = explorerController.retrieveByUserName( graphUserId ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      // Assuming our test graph is not larger than 100 nodes
+      ( t.length == content.length ) mustBe true
+
+      val content_owners = for ( vertex <- content ) yield vertex.properties.get( NamespaceAndName( "resource", "owner" ) ).orNull.values.head.self
+
+      content_owners.toSet( graphUserId ) mustBe true
+      content_owners.toSet.toList.length mustBe 1
+    }
+  }
 }

@@ -164,6 +164,21 @@ class StorageExplorerController @Inject() (
     future.map( s => Ok( Json.toJson( s ) ) )
 
   }
+
+  def retrieveByUserName( userId: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    val n = 100
+    Logger.debug( "Request to retrieve at most " + n + " nodes for user " + userId )
+    val g = graphTraversalSource
+    val t = g.V().has( "resource:owner", userId ).limit( n )
+
+    val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
+      Future.sequence( t.toIterable.map( v =>
+        vertexReader.read( v ) ).toSeq )
+    }
+    future.map( s => Ok( Json.toJson( s ) ) )
+
+  }
+
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 }
