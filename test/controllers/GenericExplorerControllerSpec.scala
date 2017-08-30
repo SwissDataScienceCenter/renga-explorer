@@ -40,7 +40,6 @@ import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
 
-
 /**
  * Continued by 3C111 on 29.08.2017
  */
