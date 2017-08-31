@@ -178,3 +178,59 @@ paths:
       responses:
         200:
           description: 'Ok'
+  /storage/list/{userId}:
+    get:
+      tags:
+         - 'Storage'
+      summary: 'Files timerange'
+      description:  'Get all vertices for a user'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      - name: userId
+        in: path
+        description: 'User id'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+  /storage/graph/:
+    get:
+      tags:
+         - 'Storage'
+      summary: 'Graph subset'
+      description:  'Get connected vertices and edges from the graph limited by default'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+  /storage/node/{nodeid}:
+    get:
+      tags:
+         - 'Storage'
+      summary: 'Node metadata'
+      description:  'Get metadata from the node with nodeid'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      - name: nodeid
+        in: path
+        description: 'node id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
