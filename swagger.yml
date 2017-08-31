@@ -198,7 +198,7 @@ paths:
       responses:
         200:
           description: 'Ok'
-  /storage/graph/:
+  /graph/full:
     get:
       tags:
          - 'Storage'
@@ -213,7 +213,7 @@ paths:
       responses:
         200:
           description: 'Ok'
-  /storage/node/{nodeid}:
+  /graph/node/{nodeid}:
     get:
       tags:
          - 'Storage'
