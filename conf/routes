@@ -17,3 +17,9 @@ GET      /storage/list/:userId                    controllers.StorageExplorerCon
 
 GET      /graph/full                              controllers.GenericExplorerController.retrieveGraphSubset
 GET      /graph/node/:id                          controllers.GenericExplorerController.retrieveNodeMetaData( id: Long )
+
+#GET      /lineage/context/:id                    controllers.AnthologyExplorerController.lineageFromContext(id: Long)
+
+GET      /project/list                            controllers.ProjectExplorerController.retrieveProjects
+GET      /project/user/:userId                    controllers.ProjectExplorerController.retrieveProjectByUserName(userId: String)
+

@@ -201,7 +201,7 @@ paths:
   /graph/full:
     get:
       tags:
-         - 'Storage'
+         - 'Graph'
       summary: 'Graph subset'
       description:  'Get connected vertices and edges from the graph limited by default'
       parameters:
@@ -216,7 +216,7 @@ paths:
   /graph/node/{nodeid}:
     get:
       tags:
-         - 'Storage'
+         - 'Graph'
       summary: 'Node metadata'
       description:  'Get metadata from the node with nodeid'
       parameters:
@@ -234,3 +234,53 @@ paths:
       responses:
         200:
           description: 'Ok'
+  /lineage/context/{contextid}:
+    get:
+      tags:
+         - 'Lineage'
+      summary: 'Lineage from context node'
+      description:  'Get all project nodes (limited)'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+  /project/list :
+    get:
+      tags:
+         - 'Projects'
+      summary: 'List project nodes'
+      description:  'Get all project nodes in the graph (limited)'
+      parameters:
+      - name: Authorization
+        in: header
+        description: 'Bearer token'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+  /project/user/:userId:
+      get:
+        tags:
+           - 'Projects'
+        summary: 'List user project nodes'
+        description:  'Get all project nodes of a user with userId (limited)'
+        parameters:
+        - name: Authorization
+          in: header
+          description: 'Bearer token'
+          required: true
+          type: string
+        - name: userId
+          in: path
+          description: 'User id'
+          required: true
+          type: string        
+        responses:
+          200:
+            description: 'Ok'
