@@ -23,11 +23,6 @@ paths:
       summary: 'Bucket metadata'
       description: 'Access bucket metadata'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       - name: bucket_id
         in: path
         description: 'Bucket graph id'
@@ -39,6 +34,9 @@ paths:
           description: 'Ok'
         404:
           description: 'Bucket not found'
+      security:
+      - token_auth:
+        - 'profile'
   /storage/file/{file_id}:
     get:
       tags:
@@ -46,11 +44,6 @@ paths:
       summary: 'File metadata'
       description: 'Access file metadata'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       - name: file_id
         in: path
         description: 'File graph id'
@@ -62,6 +55,9 @@ paths:
           description: 'Ok'
         404:
           description: 'File not found'
+      security:
+      - token_auth:
+        - 'profile'
   /storage/{bucket_id}/files:
     get:
       tags:
@@ -69,11 +65,6 @@ paths:
       summary: 'Bucket files'
       description: 'List all files in a bucket'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       - name: bucket_id
         in: path
         description: 'Bucket graph id'
@@ -85,21 +76,21 @@ paths:
           description: 'Ok'
         404:
           description: 'Bucket not found'
+      security:
+      - token_auth:
+         - 'profile'
   /storage/list:
     get:
       tags:
       - 'Storage'
       summary: 'Bucket list'
       description: 'List all available buckets'
-      parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       responses:
         200:
           description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /storage/{bucket_id}/{path}:
     get:
       tags:
@@ -107,11 +98,6 @@ paths:
       summary: 'Access file metadata'
       description: 'File metadata from bucket and path'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       - name: bucket_id
         in: path
         description: 'Bucket graph id'
@@ -128,6 +114,9 @@ paths:
           description: 'Ok'
         404:
           description: 'Bucket or path not found'
+      security:
+      - token_auth:
+        - 'profile'
   /storage/file/{file_id}/versions:
     get:
       tags:
@@ -135,11 +124,6 @@ paths:
       summary: 'File versions'
       description:  'Get all version from a file'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       - name: file_id
         in: path
         description: 'File graph id'
@@ -151,6 +135,9 @@ paths:
           description: 'Ok'
         404:
           description: 'File not found'
+      security:
+      - token_auth:
+        - 'profile'
   /storage/file/timestamps/{date1}/{date2}:
     get:
       tags:
@@ -158,11 +145,6 @@ paths:
       summary: 'Files timerange'
       description:  'Get all timestamped vertices between date1 and date2'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       - name: date1
         in: path
         description: 'Lower timestamp'
@@ -178,6 +160,9 @@ paths:
       responses:
         200:
           description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /storage/list/{userId}:
     get:
       tags:
@@ -185,11 +170,6 @@ paths:
       summary: 'Files timerange'
       description:  'Get all vertices for a user'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       - name: userId
         in: path
         description: 'User id'
@@ -198,21 +178,21 @@ paths:
       responses:
         200:
           description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /graph/full:
     get:
       tags:
          - 'Graph'
       summary: 'Graph subset'
       description:  'Get connected vertices and edges from the graph limited by default'
-      parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       responses:
         200:
           description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /graph/node/{nodeid}:
     get:
       tags:
@@ -220,11 +200,6 @@ paths:
       summary: 'Node metadata'
       description:  'Get metadata from the node with nodeid'
       parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       - name: nodeid
         in: path
         description: 'node id'
@@ -234,36 +209,33 @@ paths:
       responses:
         200:
           description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /lineage/context/{contextid}:
     get:
       tags:
          - 'Lineage'
       summary: 'Lineage from context node'
       description:  'Get all project nodes (limited)'
-      parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       responses:
         200:
           description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /project/list :
     get:
       tags:
          - 'Projects'
       summary: 'List project nodes'
       description:  'Get all project nodes in the graph (limited)'
-      parameters:
-      - name: Authorization
-        in: header
-        description: 'Bearer token'
-        required: true
-        type: string
       responses:
         200:
           description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /project/user/ :
       get:
         tags:
@@ -271,11 +243,6 @@ paths:
         summary: 'List user project nodes'
         description:  'Get all project nodes of a user with userId (limited)'
         parameters:
-        - name: Authorization
-          in: header
-          description: 'Bearer token'
-          required: true
-          type: string
         - name: userId
           in: query
           description: 'User id'
@@ -284,3 +251,12 @@ paths:
         responses:
           200:
             description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+securityDefinitions:
+  token_auth:
+    type: "oauth2"
+    flow: "implicit"
+    scopes:
+      profile: user profile
