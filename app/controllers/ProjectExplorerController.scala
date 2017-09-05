@@ -56,11 +56,13 @@ class ProjectExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
-  def retrieveProjectByUserName( userId: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+  def retrieveProjectByUserName( userId: Option[String] ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    val user = userId.getOrElse( request.userId )
+
     val n = 100
-    Logger.debug( "Request to retrieve at most " + n + " project nodes for user " + userId )
+    Logger.debug( "Request to retrieve at most " + n + " project nodes for user " + user )
     val g = graphTraversalSource
-    val t = g.V().has( "resource:owner", userId ).has( Constants.TypeKey, "project:project_name" ).limit( n )
+    val t = g.V().has( "resource:owner", user ).has( Constants.TypeKey, "project:project" ).limit( n )
 
     val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
       Future.sequence( t.toIterable.map( v =>
