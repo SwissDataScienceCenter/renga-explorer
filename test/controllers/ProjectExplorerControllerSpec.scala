@@ -88,4 +88,17 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
     }
   }
+
+  "The retrieve projects by userId controller" should {
+    "return all projects of a specific user" in {
+      val user = g.V().has( "resource:owner" ).values[String]( "resource:owner" ).limit( 1 ).asScala.toList.head
+
+      val graphList = g.V().has( Constants.TypeKey, "project:project" ).has( "resource:owner", user ).asScala.toList
+
+      val result = projectController.retrieveProjectByUserName( Option( user ) ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      ( content.length == graphList.length ) mustBe true
+    }
+  }
 }
