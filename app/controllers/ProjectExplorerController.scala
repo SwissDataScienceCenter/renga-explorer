@@ -85,23 +85,20 @@ class ProjectExplorerController @Inject() (
     future.map( s => Ok( Json.toJson( s ) ) )
 
   }
-  /*
-  def retrieveProjectMetatdata ( id: Long): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+
+  def retrieveProjectMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve project metadata for project node with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) )
 
-    val future  = graphExecutionContext.execute {
+    val future: Future[PersistedVertex] = graphExecutionContext.execute {
+      vertexReader.read( t.next() )
 
-        val vertex = t.next()
-        vertexReader.read( vertex )
+    }
+    future.map( s => Ok( Json.toJson( s ) ) )
 
-    }.map( s => Ok( Json.toJson( s ) ) )
-
-
-  }*/
+  }
   // from a project id all nodes that link with "project: is part of"
-  // metadata of a project id
 
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
