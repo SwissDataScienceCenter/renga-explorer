@@ -14,7 +14,7 @@ object ImportJSONStorageGraph {
 object ImportJSONLineageGraph {
 
   def populateGraph( graph: Graph ): Unit = {
-    val inputStream = getClass.getResourceAsStream( "/test-lineage2.json" )
+    val inputStream = getClass.getResourceAsStream( "/test-lineage.json" )
     graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
   }
 }
