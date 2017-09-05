@@ -264,7 +264,7 @@ paths:
       responses:
         200:
           description: 'Ok'
-  /project/user/:userId:
+  /project/user/ :
       get:
         tags:
            - 'Projects'
@@ -277,10 +277,10 @@ paths:
           required: true
           type: string
         - name: userId
-          in: path
+          in: query
           description: 'User id'
-          required: true
-          type: string        
+          required: false
+          type: string
         responses:
           200:
             description: 'Ok'
