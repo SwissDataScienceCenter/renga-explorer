@@ -4,6 +4,7 @@ import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSi
 import ch.datascience.graph.Constants
 import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json._
+import ch.datascience.graph.naming.NamespaceAndName
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.scope.Scope
 import ch.datascience.test.security.FakeRequestWithToken._
@@ -22,7 +23,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ ExecutionContext }
+import scala.concurrent.ExecutionContext
 
 /**
  * Created by 3C111 on 04.09.2017
@@ -81,6 +82,24 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       ( content.length == graphList.length ) mustBe true
+    }
+  }
+  "The project metadata query" should {
+    "return the metadata of a projectnode" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+
+      val graphProjectNode = g.V( projectId ).asScala.toList.head
+      val graphProjectName = graphProjectNode.value[String]( "project:project_name" )
+      val graphProjectOwner = graphProjectNode.value[String]( "resource:owner" )
+
+      val result = projectController.retrieveProjectMetadata( projectId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[PersistedVertex]
+
+      val contentProjectName = content.properties.get( NamespaceAndName( "project", "project_name" ) ).orNull.values.head.self
+      val contentProjectOwner = content.properties.get( NamespaceAndName( "resource", "owner" ) ).orNull.values.head.self
+
+      ( contentProjectName == graphProjectName ) mustBe true
+      ( graphProjectOwner == contentProjectOwner ) mustBe true
     }
   }
 }
