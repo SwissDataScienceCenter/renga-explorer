@@ -9,7 +9,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONGraph
+import helpers.ImportJSONStorageGraph
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -48,7 +48,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
 
   before {
-    ImportJSONGraph.populateGraph( graph )
+    ImportJSONStorageGraph.populateGraph( graph )
   }
 
   after {
@@ -82,3 +82,4 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 }
+
