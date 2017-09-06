@@ -11,7 +11,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONGraph
+import helpers.ImportJSONStorageGraph
 import org.apache.tinkerpop.gremlin.process.traversal.P
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
@@ -20,12 +20,11 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Reads
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 
 class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
@@ -49,7 +48,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
 
   before {
-    ImportJSONGraph.populateGraph( graph )
+    ImportJSONStorageGraph.populateGraph( graph )
   }
 
   after {
@@ -64,18 +63,6 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   implicit val ec = ExecutionContext.global
 
-  "The return graph subset controller" should {
-    "return a subset of nodes and edges from the graph" in {
-      // val result = explorerController.retrieveGraphSubset().apply( fakerequest )
-      //  val content = contentAsJson( result ).as[Seq[PersistedVertex]]
-
-      val graphNodes = g.V().asScala.toList
-      val n = 10
-      //val t = g.V().as( "node1" ).outE().as( "edge" ).inV().as( "node2" ).select[PersistedVertex]( "node1", "edge", "node2" ).limit( n ).asScala.toList
-
-    }
-
-  }
   def getBucketsFromGraph() = {
     val buckets = g.V().has( "resource:bucket_name" ).asScala.toList
     for ( item <- buckets ) yield item.id()
@@ -249,4 +236,22 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  "The user-search controller " should {
+    "return all vertices owned by that user" in {
+
+      val graphUserId = g.V().has( "resource:owner" ).asScala.toList.head.values[String]( "resource:owner" ).asScala.toList.head
+      val t = g.V().has( "resource:owner", graphUserId ).asScala.toSeq
+
+      val result = explorerController.retrieveByUserName( graphUserId ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      // Assuming our test graph is not larger than 100 nodes
+      ( t.length == content.length ) mustBe true
+
+      val content_owners = for ( vertex <- content ) yield vertex.properties.get( NamespaceAndName( "resource", "owner" ) ).orNull.values.head.self
+
+      content_owners.toSet( graphUserId ) mustBe true
+      content_owners.toSet.toList.length mustBe 1
+    }
+  }
 }
