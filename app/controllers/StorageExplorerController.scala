@@ -23,7 +23,7 @@ import javax.inject.{ Inject, Singleton }
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.Constants
 import ch.datascience.graph.elements.persisted.PersistedVertex
-import ch.datascience.graph.elements.persisted.json.PersistedVertexFormat
+import ch.datascience.graph.elements.persisted.json.{ PersistedEdgeFormat, PersistedVertexFormat }
 import ch.datascience.graph.naming.NamespaceAndName
 import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
@@ -31,10 +31,10 @@ import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReade
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
 import org.apache.tinkerpop.gremlin.process.traversal.P
 import org.apache.tinkerpop.gremlin.structure.Vertex
-import org.apache.tinkerpop.gremlin.structure.Edge
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.{ Format, JsValue, Json, Writes }
+import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
+import play.api.Logger
 import play.api.mvc._
 
 import scala.collection.JavaConversions._
@@ -61,50 +61,9 @@ class StorageExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
-  def retrieveGraphSubset: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    // unless otherwise specified, the number of nodes are limited
-
-    //   implicit lazy val seqFormat: Format[Map[String, PersistedVertex]] = implicitly[Format[Map[String, PersistedVertex]]]
-
-    val n = 10
-    val g = graphTraversalSource
-    val t = g.V().as( "node1" ).outE().as( "edge" ).inV().as( "node2" ).select[java.lang.Object]( "node1", "edge", "node2" ).limit( n )
-    val future: Future[Seq[Map[String, PersistedVertex]]] = graphExecutionContext.execute {
-      import scala.collection.JavaConverters._
-      Future.sequence(
-        for {
-          entry <- t.asScala.toSeq
-          se = entry.asScala.toSeq
-          ( n1, fnode1 ) = se( 0 )
-          ( e, fedge ) = se( 1 )
-          ( n2, fnode2 ) = se( 2 )
-        } yield for {
-          vertex1 <- vertexReader.read( fnode1.asInstanceOf[Vertex] )
-          edge <- edgeReader.read( fedge.asInstanceOf[Edge] )
-          vertex2 <- vertexReader.read( fnode2.asInstanceOf[Vertex] )
-        } yield Map( n1 -> vertex1, n2 -> vertex2 )
-      )
-
-    }
-
-    future.map( i => Ok( Json.toJson( i ) ) )
-  }
-  /*
-
-
-    def retrieveGraphMetaData: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-       val g = graphTraversalSource
-       val t = g.V()
-
-           val future: Future[Map[String, String]] = graphExecutionContext.execute {
-         Future.sequence( ??? )
-       }
-       future.map( s => Ok( Json.toJson( s ) ) )
-
-     }*/
-
   def retrieveFilesDate( date1: Long, date2: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
 
+    Logger.debug( "Requests to retrieve all files between " + date1 + " and " + date2 )
     val g = graphTraversalSource
     val t = g.V().has( "system:creation_time", P.between( date1, date2 ) )
 
@@ -117,6 +76,7 @@ class StorageExplorerController @Inject() (
   }
 
   def bucketList: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve all buckets in the graph" )
     val g = graphTraversalSource
     val t = g.V().has( Constants.TypeKey, "resource:bucket" )
 
@@ -129,6 +89,7 @@ class StorageExplorerController @Inject() (
   }
 
   def fileList( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve all files in bucket with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
 
@@ -144,6 +105,7 @@ class StorageExplorerController @Inject() (
    * Here the id is the bucket id and the path the filename
    */
   def fileMetadatafromPath( id: Long, path: String ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve file metadata from bucket with " + id + " with path " + path )
     val g = graphTraversalSource
     val t = g.V().has( "resource:file_name", path ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).V( Long.box( id ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
@@ -166,6 +128,7 @@ class StorageExplorerController @Inject() (
   Returns [Map[String, PersistedVertex]] with keys = "data", "bucket"
    */
   def fileMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve file metadata from file with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
@@ -185,6 +148,7 @@ class StorageExplorerController @Inject() (
   }
 
   def bucketMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve bucket metadata from bucket with " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) )
 
@@ -207,6 +171,7 @@ class StorageExplorerController @Inject() (
     }
   }
   def retrievefileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve all file versions from file with id" + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).outV()
 
@@ -217,6 +182,21 @@ class StorageExplorerController @Inject() (
     future.map( s => Ok( Json.toJson( s ) ) )
 
   }
-  private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
 
+  def retrieveByUserName( userId: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    val n = 100
+    Logger.debug( "Request to retrieve at most " + n + " nodes for user " + userId )
+    val g = graphTraversalSource
+    val t = g.V().has( "resource:owner", userId ).limit( n )
+
+    val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
+      Future.sequence( t.toIterable.map( v =>
+        vertexReader.read( v ) ).toSeq )
+    }
+    future.map( s => Ok( Json.toJson( s ) ) )
+
+  }
+
+  private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
+  private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 }
