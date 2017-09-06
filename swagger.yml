@@ -163,7 +163,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/:
+  /storage:
     get:
       tags:
          - 'Storage'
