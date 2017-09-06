@@ -6,9 +6,9 @@
 # Api spec
 GET      /swagger.json                            controllers.SwaggerController.getSwagger
 
-GET      /storage/list                            controllers.StorageExplorerController.bucketList
+GET      /storage/bucket                          controllers.StorageExplorerController.bucketList
 GET      /storage/file/:id                        controllers.StorageExplorerController.fileMetadata(id: Long)
-GET      /storage/:id/files                       controllers.StorageExplorerController.fileList(id: Long)
+GET      /storage/bucket/:id/files                controllers.StorageExplorerController.fileList(id: Long)
 GET      /storage/:id                             controllers.StorageExplorerController.bucketMetadata(id: Long)
 GET      /storage/:id/*path                       controllers.StorageExplorerController.fileMetadatafromPath(id: Long, path: String)
 GET      /storage/file/:id/versions               controllers.StorageExplorerController.retrievefileVersions( id: Long )
@@ -20,6 +20,6 @@ GET      /graph/node/:id                          controllers.GenericExplorerCon
 
 #GET      /lineage/context/:id                    controllers.AnthologyExplorerController.lineageFromContext(id: Long)
 
-GET      /project/list                            controllers.ProjectExplorerController.retrieveProjects
-GET      /project/user                            controllers.ProjectExplorerController.retrieveProjectByUserName(userId: Option[String] )
-
+GET      /projects/                               controllers.ProjectExplorerController.retrieveProjects
+GET      /projects/user                           controllers.ProjectExplorerController.retrieveProjectByUserName(userId: Option[String] )
+GET      /projects/:id                            controllers.ProjectExplorerController.retrieveProjectMetadata( id: Long )
