@@ -13,7 +13,7 @@ GET      /storage/:id                             controllers.StorageExplorerCon
 GET      /storage/:id/*path                       controllers.StorageExplorerController.fileMetadatafromPath(id: Long, path: String)
 GET      /storage/file/:id/versions               controllers.StorageExplorerController.retrievefileVersions( id: Long )
 GET      /storage/file/timestamps/:date1/:date2   controllers.StorageExplorerController.retrieveFilesDate( date1: Long, date2: Long )
-GET      /storage/list/:userId                    controllers.StorageExplorerController.retrieveByUserName(userId: String)
+GET      /storage                                 controllers.StorageExplorerController.retrieveByUserName(userId: String)
 
 GET      /graph/full                              controllers.GenericExplorerController.retrieveGraphSubset
 GET      /graph/node/:id                          controllers.GenericExplorerController.retrieveNodeMetaData( id: Long )
