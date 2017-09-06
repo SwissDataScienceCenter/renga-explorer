@@ -16,7 +16,7 @@ tags:
 - name: 'Storage'
   description: 'File explorer'
 paths:
-  /storage/{bucketId}:
+  /storage/bucket/{bucketId}:
     get:
       tags:
       - 'Storage'
@@ -91,7 +91,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/{bucketId}/{path}:
+  /storage/bucket/{bucketId}/{path}:
     get:
       tags:
         - 'Storage'
