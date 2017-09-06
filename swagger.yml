@@ -212,7 +212,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/ :
+  /projects:
     get:
       tags:
          - 'Projects'
@@ -224,7 +224,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/user/ :
+  /projects/user:
       get:
         tags:
            - 'Projects'
@@ -242,7 +242,7 @@ paths:
         security:
         - token_auth:
           - 'profile'
-  /projects/{projectNodeId}/ :
+  /projects/{projectNodeId}:
       get:
         tags:
            - 'Projects'
