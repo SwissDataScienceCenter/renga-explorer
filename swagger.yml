@@ -163,7 +163,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/list/{userId}:
+  /storage/:
     get:
       tags:
          - 'Storage'
@@ -171,7 +171,7 @@ paths:
       description:  'Get all vertices for a user'
       parameters:
       - name: userId
-        in: path
+        in: query
         description: 'User id'
         required: true
         type: string
