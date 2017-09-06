@@ -71,7 +71,7 @@ class ProjectExplorerController @Inject() (
   def retrieveProjectMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve project metadata for project node with id " + id )
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) )
+    val t = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
 
     val future: Future[PersistedVertex] = graphExecutionContext.execute {
       vertexReader.read( t.next() )
