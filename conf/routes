@@ -20,6 +20,6 @@ GET      /graph/node/:id                          controllers.GenericExplorerCon
 
 #GET      /lineage/context/:id                    controllers.AnthologyExplorerController.lineageFromContext(id: Long)
 
-GET      /projects/                               controllers.ProjectExplorerController.retrieveProjects
+GET      /projects                                controllers.ProjectExplorerController.retrieveProjects
 GET      /projects/user                           controllers.ProjectExplorerController.retrieveProjectByUserName(userId: Option[String] )
 GET      /projects/:id                            controllers.ProjectExplorerController.retrieveProjectMetadata( id: Long )
