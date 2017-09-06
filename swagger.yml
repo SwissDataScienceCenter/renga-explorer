@@ -16,14 +16,14 @@ tags:
 - name: 'Storage'
   description: 'File explorer'
 paths:
-  /storage/{bucket_id}:
+  /storage/{bucketId}:
     get:
       tags:
       - 'Storage'
       summary: 'Bucket metadata'
       description: 'Access bucket metadata'
       parameters:
-      - name: bucket_id
+      - name: bucketId
         in: path
         description: 'Bucket graph id'
         required: true
@@ -37,14 +37,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/file/{file_id}:
+  /storage/file/{fileId}:
     get:
       tags:
       - 'Storage'
       summary: 'File metadata'
       description: 'Access file metadata'
       parameters:
-      - name: file_id
+      - name: fileId
         in: path
         description: 'File graph id'
         required: true
@@ -58,14 +58,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/{bucket_id}/files:
+  /storage/bucket/{bucketId}/files:
     get:
       tags:
       - 'Storage'
       summary: 'Bucket files'
       description: 'List all files in a bucket'
       parameters:
-      - name: bucket_id
+      - name: bucketId
         in: path
         description: 'Bucket graph id'
         required: true
@@ -79,7 +79,7 @@ paths:
       security:
       - token_auth:
          - 'profile'
-  /storage/list:
+  /storage/bucket:
     get:
       tags:
       - 'Storage'
@@ -91,14 +91,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/{bucket_id}/{path}:
+  /storage/{bucketId}/{path}:
     get:
       tags:
         - 'Storage'
       summary: 'Access file metadata'
       description: 'File metadata from bucket and path'
       parameters:
-      - name: bucket_id
+      - name: bucketId
         in: path
         description: 'Bucket graph id'
         required: true
@@ -117,14 +117,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/file/{file_id}/versions:
+  /storage/file/{fileId}/versions:
     get:
       tags:
         - 'Storage'
       summary: 'File versions'
       description:  'Get all version from a file'
       parameters:
-      - name: file_id
+      - name: fileId
         in: path
         description: 'File graph id'
         required: true
@@ -212,19 +212,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/context/{contextid}:
-    get:
-      tags:
-         - 'Lineage'
-      summary: 'Lineage from context node'
-      description:  'Get all project nodes (limited)'
-      responses:
-        200:
-          description: 'Ok'
-      security:
-      - token_auth:
-        - 'profile'
-  /project/list :
+  /projects/ :
     get:
       tags:
          - 'Projects'
@@ -236,7 +224,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /project/user/ :
+  /projects/user/ :
       get:
         tags:
            - 'Projects'
@@ -251,9 +239,27 @@ paths:
         responses:
           200:
             description: 'Ok'
-      security:
-      - token_auth:
-        - 'profile'
+        security:
+        - token_auth:
+          - 'profile'
+  /projects/{projectNodeId}/ :
+      get:
+        tags:
+           - 'Projects'
+        summary: 'Get metadata'
+        description:  'Get metadate for projectnode with projectNodeId'
+        parameters:
+        - name: projectNodeId
+          in: path
+          description: 'Project node id'
+          required: true
+          type: string
+        responses:
+          200:
+            description: 'Ok'
+        security:
+        - token_auth:
+          - 'profile'
 securityDefinitions:
   token_auth:
     type: "oauth2"
