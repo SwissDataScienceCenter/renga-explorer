@@ -91,7 +91,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/bucket/{bucketId}/{path}:
+  /storage/bucket/{bucketId}/files/{path}:
     get:
       tags:
         - 'Storage'
