@@ -13,13 +13,17 @@ produces:
 consumes:
   - application/json
 tags:
-- name: 'Storage'
-  description: 'File explorer'
+- name: 'Explorer-Graph'
+  description: 'Graph explorer'
+- name: 'Explorer-Projects'
+  description: 'Projects explorer'
+- name: 'Explorer-Storage'
+  description: 'Storage explorer'
 paths:
   /storage/bucket/{bucketId}:
     get:
       tags:
-      - 'Storage'
+      - 'Explorer-Storage'
       summary: 'Bucket metadata'
       description: 'Access bucket metadata'
       parameters:
@@ -40,7 +44,7 @@ paths:
   /storage/file/{fileId}:
     get:
       tags:
-      - 'Storage'
+      - 'Explorer-Storage'
       summary: 'File metadata'
       description: 'Access file metadata'
       parameters:
@@ -61,7 +65,7 @@ paths:
   /storage/bucket/{bucketId}/files:
     get:
       tags:
-      - 'Storage'
+      - 'Explorer-Storage'
       summary: 'Bucket files'
       description: 'List all files in a bucket'
       parameters:
@@ -82,7 +86,7 @@ paths:
   /storage/bucket:
     get:
       tags:
-      - 'Storage'
+      - 'Explorer-Storage'
       summary: 'Bucket list'
       description: 'List all available buckets'
       responses:
@@ -94,7 +98,7 @@ paths:
   /storage/bucket/{bucketId}/files/{path}:
     get:
       tags:
-        - 'Storage'
+        - 'Explorer-Storage'
       summary: 'Access file metadata'
       description: 'File metadata from bucket and path'
       parameters:
@@ -120,7 +124,7 @@ paths:
   /storage/file/{fileId}/versions:
     get:
       tags:
-        - 'Storage'
+        - 'Explorer-Storage'
       summary: 'File versions'
       description:  'Get all version from a file'
       parameters:
@@ -141,7 +145,7 @@ paths:
   /storage/file/timestamps/{date1}/{date2}:
     get:
       tags:
-         - 'Storage'
+         - 'Explorer-Storage'
       summary: 'Files timerange'
       description:  'Get all timestamped vertices between date1 and date2'
       parameters:
@@ -166,7 +170,7 @@ paths:
   /storage:
     get:
       tags:
-         - 'Storage'
+         - 'Explorer-Storage'
       summary: 'Files timerange'
       description:  'Get all vertices for a user'
       parameters:
@@ -184,7 +188,7 @@ paths:
   /graph/full:
     get:
       tags:
-         - 'Graph'
+         - 'Explorer-Graph'
       summary: 'Graph subset'
       description:  'Get connected vertices and edges from the graph limited by default'
       responses:
@@ -196,7 +200,7 @@ paths:
   /graph/node/{nodeid}:
     get:
       tags:
-         - 'Graph'
+         - 'Explorer-Graph'
       summary: 'Node metadata'
       description:  'Get metadata from the node with nodeid'
       parameters:
@@ -215,7 +219,7 @@ paths:
   /projects:
     get:
       tags:
-         - 'Projects'
+         - 'Explorer-Projects'
       summary: 'List project nodes'
       description:  'Get all project nodes in the graph (limited)'
       responses:
@@ -227,7 +231,7 @@ paths:
   /projects/user:
       get:
         tags:
-           - 'Projects'
+           - 'Explorer-Projects'
         summary: 'List user project nodes'
         description:  'Get all project nodes of a user with userId (limited)'
         parameters:
@@ -245,7 +249,7 @@ paths:
   /projects/{projectNodeId}:
       get:
         tags:
-           - 'Projects'
+           - 'Explorer-Projects'
         summary: 'Get metadata'
         description:  'Get metadate for projectnode with projectNodeId'
         parameters:
