@@ -95,7 +95,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/bucket/{bucketId}/files/{path}:
+  /storage/bucket/{bucketId}/file{path}:
     get:
       tags:
         - 'Explorer-Storage'
@@ -207,6 +207,25 @@ paths:
       - name: nodeid
         in: path
         description: 'node id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /lineage/context/{deployerid}:
+    get:
+      tags:
+         - 'Lineage'
+      summary: 'Lineage from deployer'
+      description:  'Lineage from deployer'
+      parameters:
+      - name: deployerid
+        in: path
+        description: 'deployer node id'
         required: true
         type: integer
         format: int64
