@@ -92,4 +92,15 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
     }
   }
+  "The lineage from deployer controller" should {
+    "return an empty list if the id of the node is not a deployernode" in {
+      val deployerid = g.V().hasNot( "deployer:context" ).asScala.toList.head.id
+      val result = lineageController.lineageFromDeployer( deployerid.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[JsObject]]
+
+      content.length mustBe 0
+
+    }
+  }
+
 }
