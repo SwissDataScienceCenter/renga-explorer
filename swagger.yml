@@ -268,7 +268,7 @@ paths:
   /projects/{projectNodeId}:
     get:
       tags:
-         - 'Projects'
+         - 'Explorer-Projects'
       summary: 'Get metadata'
       description:  'Get metadate for projectnode with projectNodeId'
       parameters:
