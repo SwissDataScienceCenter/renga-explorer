@@ -83,6 +83,17 @@ class LineageExplorerController @Inject() (
     }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
 
   }
+  /*
+
+  def lineageFromFile( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug("Find Lineage from filenode with id " + id)
+
+    val g = graphTraversalSource
+    val t = g.V( Long.box( id ) ).emit().repeat(bothE("resource:create", "resource:write", "resource:read", "deployer:launch" ).as( "edge" ).otherV().as( "node" )).simplePath().select('edge', 'node').limit(4)
+
+
+  }
+*/
 
   private[this] def ensureList[A]( obj: java.lang.Object ): Seq[A] = obj match {
     case list: java.util.List[_] => list.asScala.toSeq.map( _.asInstanceOf[A] )
