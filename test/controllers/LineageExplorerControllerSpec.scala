@@ -76,6 +76,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
+
   "The lineage from deployer controller" should {
     "return the full lineage tree from a context node" in {
       val deployerid = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
@@ -83,12 +84,11 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
       val list = for ( i <- c ) yield i.asInstanceOf[util.List[Object]].asScala.toList.length
-      val entries = list.foldLeft( 0 )( _ + _ )
 
       val result = lineageController.lineageFromDeployer( deployerid.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
-      ( content.length == entries ) mustBe true
+      ( content.length == list.sum ) mustBe true
 
     }
   }
