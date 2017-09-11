@@ -44,8 +44,6 @@ import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
 
-import scala.collection.JavaConversions._
-
 class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
   // Set the stage
@@ -80,7 +78,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   "The lineage from deployer controller" should {
     "return the full lineage tree from a context node" in {
       val deployerid = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
-      val nodes = g.V( deployerid ).outE( "deployer:launch" ).as( "edge" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read" ).as( "edge" ).otherV().as( "node" ).dedup() ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+      val nodes = g.V( deployerid ).outE( "deployer:launch" ).as( "edge" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
       val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
       val list = for ( i <- c ) yield i.asInstanceOf[util.List[Object]].asScala.toList.length
@@ -104,3 +102,9 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
 }
+/* graph = JanusGraphFactory.build().set('storage.backend', 'inmemory').open()
+ graph.io(IoCore.graphson()).readGraph("test-lineage.json")
+g = graph.traversal()
+g.V().as("node").valueMap().as("values").select("node","values")
+
+* */
