@@ -99,5 +99,16 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
     }
   }
+  "The generic node metadata controller" should {
+    "return an empty list if the node does not exist" in {
+
+      val nodeId = 4
+      val result = genericController.retrieveNodeMetaData( nodeId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result )
+
+      ( content.toString() == "null" ) mustBe true
+
+    }
+  }
 }
 
