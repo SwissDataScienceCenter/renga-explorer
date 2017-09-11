@@ -84,9 +84,13 @@ class GenericExplorerController @Inject() (
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) )
 
-    val future: Future[PersistedVertex] = graphExecutionContext.execute {
-      val v = t.next()
-      vertexReader.read( v )
+    val future: Future[Option[PersistedVertex]] = graphExecutionContext.execute {
+      if ( t.hasNext ) {
+        val v = t.next()
+        vertexReader.read( v ).map( Some.apply )
+      }
+      else
+        Future.successful( None )
     }
     future.map( i => Ok( Json.toJson( i ) ) )
   }

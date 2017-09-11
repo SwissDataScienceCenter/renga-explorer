@@ -100,6 +100,4 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
     }
   }
-
- 
 }
