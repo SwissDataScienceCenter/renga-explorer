@@ -83,17 +83,33 @@ class LineageExplorerController @Inject() (
     }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
 
   }
-  /*
 
   def lineageFromFile( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug("Find Lineage from filenode with id " + id)
+    Logger.debug( "Find Lineage from filenode with id " + id )
 
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).emit().repeat(bothE("resource:create", "resource:write", "resource:read", "deployer:launch" ).as( "edge" ).otherV().as( "node" )).simplePath().select('edge', 'node').limit(4)
+    val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+    val seq = graphExecutionContext.execute {
 
+      for {
+        entry <- t.asScala.toList
+        s = entry.asScala.toMap
+        edges = ensureList[Edge]( s( "edge" ) )
+        vertices = ensureList[Vertex]( s( "node" ) )
+        ( edge, vertex ) <- edges zip vertices
+      } yield ( edge, vertex )
 
+    }
+
+    Future.traverse( seq ) {
+      case ( edge, vertex ) =>
+        for {
+          e <- edgeReader.read( edge )
+          v <- vertexReader.read( vertex )
+
+        } yield ( e, v )
+    }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
   }
-*/
 
   private[this] def ensureList[A]( obj: java.lang.Object ): Seq[A] = obj match {
     case list: java.util.List[_] => list.asScala.toSeq.map( _.asInstanceOf[A] )
