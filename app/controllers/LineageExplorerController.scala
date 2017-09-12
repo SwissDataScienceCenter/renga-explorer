@@ -59,7 +59,6 @@ class LineageExplorerController @Inject() (
     Logger.debug( "Find Lineage from deployer with node with id " + id )
 
     val g = graphTraversalSource
-    //  val t = g.V( Long.box( id ) ).outE( "deployer:launch" ).as( "edge" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
     val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
     val seq = graphExecutionContext.execute {
