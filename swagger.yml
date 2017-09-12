@@ -95,7 +95,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/bucket/{bucketId}/file{path}:
+  /storage/bucket/{bucketId}/files/{path}:
     get:
       tags:
         - 'Explorer-Storage'
@@ -216,16 +216,35 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/context/{contextid}:
+  /lineage/context/{contextId}:
     get:
       tags:
          - 'Lineage'
       summary: 'Lineage from context'
       description:  'Lineage from an execution context '
       parameters:
-      - name: contextid
+      - name: contextId
         in: path
         description: 'context node id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /lineage/file/{fileId}:
+    get:
+      tags:
+         - 'Lineage'
+      summary: 'Lineage from file'
+      description:  'Lineage from a file '
+      parameters:
+      - name: fileId
+        in: path
+        description: 'file node id'
         required: true
         type: integer
         format: int64
@@ -248,41 +267,41 @@ paths:
       - token_auth:
         - 'profile'
   /projects/user:
-      get:
-        tags:
-           - 'Explorer-Projects'
-        summary: 'List user project nodes'
-        description:  'Get all project nodes of a user with userId (limited)'
-        parameters:
-        - name: userId
-          in: query
-          description: 'User id'
-          required: false
-          type: string
-        responses:
-          200:
-            description: 'Ok'
-        security:
-        - token_auth:
-          - 'profile'
+    get:
+      tags:
+         - 'Explorer-Projects'
+      summary: 'List user project nodes'
+      description:  'Get all project nodes of a user with userId (limited)'
+      parameters:
+      - name: userId
+        in: query
+        description: 'User id'
+        required: false
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /projects/{projectNodeId}:
-      get:
-        tags:
-           - 'Explorer-Projects'
-        summary: 'Get metadata'
-        description:  'Get metadate for projectnode with projectNodeId'
-        parameters:
-        - name: projectNodeId
-          in: path
-          description: 'Project node id'
-          required: true
-          type: string
-        responses:
-          200:
-            description: 'Ok'
-        security:
-        - token_auth:
-          - 'profile'
+    get:
+      tags:
+         - 'Explorer-Projects'
+      summary: 'Get metadata'
+      description:  'Get metadate for projectnode with projectNodeId'
+      parameters:
+      - name: projectNodeId
+        in: path
+        description: 'Project node id'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
 securityDefinitions:
   token_auth:
     type: "oauth2"
