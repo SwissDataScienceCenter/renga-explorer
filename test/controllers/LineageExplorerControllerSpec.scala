@@ -22,8 +22,7 @@ import java.util
 
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
 import ch.datascience.graph.Constants
-import ch.datascience.graph.elements.Edge
-import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
+import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json._
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.scope.Scope
