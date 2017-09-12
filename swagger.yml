@@ -216,16 +216,35 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/context/{contextid}:
+  /lineage/context/{contextId}:
     get:
       tags:
          - 'Lineage'
       summary: 'Lineage from context'
       description:  'Lineage from an execution context '
       parameters:
-      - name: contextid
+      - name: contextId
         in: path
         description: 'context node id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /lineage/file/{fileId}:
+    get:
+      tags:
+         - 'Lineage'
+      summary: 'Lineage from file'
+      description:  'Lineage from a file '
+      parameters:
+      - name: fileId
+        in: path
+        description: 'file node id'
         required: true
         type: integer
         format: int64
