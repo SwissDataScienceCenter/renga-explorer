@@ -22,6 +22,7 @@ import java.util
 
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
 import ch.datascience.graph.Constants
+import ch.datascience.graph.elements.Edge
 import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json._
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
@@ -40,11 +41,9 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, Reads }
 import play.api.test.FakeRequest
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
-import org.apache.tinkerpop.gremlin.structure.Edge
 import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
-import scala.collection.JavaConversions._
 
 class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
@@ -84,10 +83,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
 
-      val s = c.flatMap {
-        case i if i.isInstanceOf[util.List[Any]] => i.asInstanceOf[util.List[Any]].asScala.toList
-        case i                                   => List( i.asInstanceOf[Any] )
-      }
+      val s = flatMapToList( c )
 
       val result = lineageController.lineageFromContext( deployerid.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
@@ -103,6 +99,39 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       content.length mustBe 0
 
+    }
+  }
+
+  "The lineage from file controller" should {
+    "return the lineage from a file " in {
+
+      val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
+      val nodes = g.V( fileId ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" ).asScala.toList
+
+      val t = ( for ( x <- nodes ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
+      val s = flatMapToList( t )
+
+      val result = lineageController.lineageFromFile( fileId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[JsObject]]
+
+      ( content.length == s.length ) mustBe true
+    }
+  }
+
+  "The lineage from file controller" should {
+    "return an empty list if the filenode does not exist" in {
+      val result = lineageController.lineageFromContext( ( "0" ).toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[JsObject]]
+
+      content.length mustBe 0
+
+    }
+  }
+
+  def flatMapToList( objectList: List[Object] ) = {
+    objectList.flatMap {
+      case i if i.isInstanceOf[util.List[Any]] => i.asInstanceOf[util.List[Any]].asScala.toList
+      case i                                   => List( i.asInstanceOf[Any] )
     }
   }
 }
