@@ -22,7 +22,7 @@ import java.util
 
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
 import ch.datascience.graph.Constants
-import ch.datascience.graph.elements.persisted.PersistedVertex
+import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json._
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.scope.Scope
@@ -40,9 +40,11 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, Reads }
 import play.api.test.FakeRequest
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
+import org.apache.tinkerpop.gremlin.structure.Edge
 import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 
 class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
@@ -81,18 +83,21 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val nodes = g.V( deployerid ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
       val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
-      //val list = for ( i <- c ) println( i.asInstanceOf[util.ArrayList[Object]] ) //yield i.asInstanceOf[Object]//.asScala.toList.length
+
+      val s = c.flatMap {
+        case i if i.isInstanceOf[util.List[Any]] => i.asInstanceOf[util.List[Any]].asScala.toList
+        case i                                   => List( i.asInstanceOf[Any] )
+      }
 
       val result = lineageController.lineageFromContext( deployerid.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
-      println( content )
-      //    ( content.length == list.sum ) mustBe true
+
+      ( content.length == s.length ) mustBe true
 
     }
   }
   "The lineage from context controller" should {
     "return an empty list if the id of the node is not a deployernode" in {
-      //val deployerid = g.V().hasNot( "deployer:context" ).asScala.toList.head.id
       val result = lineageController.lineageFromContext( ( "0" ).toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
