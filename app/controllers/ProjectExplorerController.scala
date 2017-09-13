@@ -22,14 +22,14 @@ import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.Constants
-import ch.datascience.graph.elements.persisted.PersistedVertex
+import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json.{ PersistedEdgeFormat, PersistedVertexFormat }
-import ch.datascience.graph.naming.NamespaceAndName
 import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
-import org.apache.tinkerpop.gremlin.structure.Vertex
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
+import org.apache.tinkerpop.gremlin.structure.{ Edge, Vertex }
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -37,6 +37,7 @@ import play.api.Logger
 import play.api.mvc._
 
 import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
 /**
@@ -98,8 +99,40 @@ class ProjectExplorerController @Inject() (
     future.map( s => Ok( Json.toJson( s ) ) )
 
   }
-  // from a project id all nodes that link with "project: is part of"
 
+  def retrieveProjectLineage( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve project lineave for project node with id " + id )
+
+    val g = graphTraversalSource
+    val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "project:is_part_of" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+
+    val seq = graphExecutionContext.execute {
+
+      for {
+        entry <- t.asScala.toList
+        s = entry.asScala.toMap
+        edges = ensureList[Edge]( s( "edge" ) )
+        vertices = ensureList[Vertex]( s( "node" ) )
+        ( edge, vertex ) <- edges zip vertices
+      } yield ( edge, vertex )
+
+    }
+
+    Future.traverse( seq ) {
+      case ( edge, vertex ) =>
+        for {
+          e <- edgeReader.read( edge )
+          v <- vertexReader.read( vertex )
+
+        } yield ( e, v )
+    }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
+  }
+
+  private[this] def ensureList[A]( obj: java.lang.Object ): Seq[A] = obj match {
+    case list: java.util.List[_] => list.asScala.toSeq.map( _.asInstanceOf[A] )
+    case _                       => Seq( obj.asInstanceOf[A] )
+
+  }
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 }

@@ -30,6 +30,7 @@ import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
 import helpers.ImportJSONProjectGraph
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -118,6 +119,19 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       ( contentProjectName == graphProjectName ) mustBe true
       ( graphProjectOwner == contentProjectOwner ) mustBe true
+    }
+  }
+
+  "The project lineage query" should {
+    "return all associated files and buckets, and execution and context nodes" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+
+      val t = g.V( projectId ).repeat( __.bothE( "deployer:launch", "project:is_part_of" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+
+      val result = projectController.retrieveProjectLineage( projectId.toString.toLong ).apply( fakerequest )
+
+      val content = contentAsJson( result )
+
     }
   }
 }

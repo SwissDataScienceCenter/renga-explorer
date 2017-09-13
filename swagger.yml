@@ -15,6 +15,8 @@ consumes:
 tags:
 - name: 'Explorer-Graph'
   description: 'Graph explorer'
+- name: 'Explorer-Lineage'
+  description: 'Lineage explorer'
 - name: 'Explorer-Projects'
   description: 'Projects explorer'
 - name: 'Explorer-Storage'
@@ -219,7 +221,7 @@ paths:
   /lineage/context/{contextId}:
     get:
       tags:
-         - 'Lineage'
+         - 'Explorer-Lineage'
       summary: 'Lineage from context'
       description:  'Lineage from an execution context '
       parameters:
@@ -238,7 +240,7 @@ paths:
   /lineage/file/{fileId}:
     get:
       tags:
-         - 'Lineage'
+         - 'Explorer-Lineage'
       summary: 'Lineage from file'
       description:  'Lineage from a file '
       parameters:
@@ -284,12 +286,30 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/{projectNodeId}:
+  /projects/project/{projectNodeId}:
     get:
       tags:
          - 'Explorer-Projects'
       summary: 'Get metadata'
-      description:  'Get metadate for projectnode with projectNodeId'
+      description:  'Get metadatea for projectnode with projectNodeId'
+      parameters:
+      - name: projectNodeId
+        in: path
+        description: 'Project node id'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /projects/{projectNodeId}/lineage:
+    get:
+      tags:
+         - 'Explorer-Projects'
+      summary: 'Get project lineage'
+      description:  'Get project lineage for projectnode with projectNodeId'
       parameters:
       - name: projectNodeId
         in: path
