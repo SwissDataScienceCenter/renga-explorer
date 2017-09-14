@@ -31,7 +31,7 @@ import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
 import helpers.ImportJSONLineageGraph
-import helpers.ListConversions.flatMapToList
+import helpers.ListConversions.ensureList
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -83,7 +83,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
 
-      val s = flatMapToList( c )
+      val s = c.flatMap( ensureList )
 
       val result = lineageController.lineageFromContext( deployerid.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
@@ -109,7 +109,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val nodes = g.V( fileId ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" ).asScala.toList
 
       val t = ( for ( x <- nodes ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
-      val s = flatMapToList( t )
+      val s = t.flatMap( ensureList )
 
       val result = lineageController.lineageFromFile( fileId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
