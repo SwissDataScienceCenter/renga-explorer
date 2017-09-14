@@ -27,6 +27,7 @@ import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
+import helpers.ListConversions.ensureList
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
 import org.apache.tinkerpop.gremlin.structure.{ Edge, Vertex }
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -109,11 +110,6 @@ class LineageExplorerController @Inject() (
 
         } yield ( e, v )
     }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
-  }
-
-  private[this] def ensureList[A]( obj: java.lang.Object ): Seq[A] = obj match {
-    case list: java.util.List[_] => list.asScala.toSeq.map( _.asInstanceOf[A] )
-    case _                       => Seq( obj.asInstanceOf[A] )
   }
 
   private[this] implicit lazy val persistedVertexFormat: Format[PersistedVertex] = PersistedVertexFormat

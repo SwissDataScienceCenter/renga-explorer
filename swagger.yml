@@ -286,7 +286,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/project/{projectNodeId}:
+  /projects/{projectNodeId}:
     get:
       tags:
          - 'Explorer-Projects'

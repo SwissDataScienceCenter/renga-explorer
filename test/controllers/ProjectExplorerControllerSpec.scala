@@ -106,7 +106,6 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   "The project metadata query" should {
     "return the metadata of a projectnode" in {
       val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
-
       val graphProjectNode = g.V( projectId ).asScala.toList.head
       val graphProjectName = graphProjectNode.value[String]( "project:project_name" )
       val graphProjectOwner = graphProjectNode.value[String]( "resource:owner" )

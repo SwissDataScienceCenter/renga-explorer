@@ -31,6 +31,7 @@ import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWit
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
 import org.apache.tinkerpop.gremlin.structure.{ Edge, Vertex }
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import helpers.ListConversions.ensureList
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.Logger
@@ -128,11 +129,6 @@ class ProjectExplorerController @Inject() (
     }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
   }
 
-  private[this] def ensureList[A]( obj: java.lang.Object ): Seq[A] = obj match {
-    case list: java.util.List[_] => list.asScala.toSeq.map( _.asInstanceOf[A] )
-    case _                       => Seq( obj.asInstanceOf[A] )
-
-  }
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 }
