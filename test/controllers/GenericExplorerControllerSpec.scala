@@ -27,7 +27,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONStorageGraph
+import helpers.{ ImportJSONStorageGraph, ImportJSONStorageNoBucketsGraph }
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -108,6 +108,49 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       ( content.toString() == "null" ) mustBe true
 
+    }
+  }
+
+  "The property search controller" should {
+    "return the nodes of a given property if they exist" in {
+      graph.traversal().V().drop().iterate()
+      ImportJSONStorageGraph.populateGraph( graph )
+
+      val prop = "importance"
+      val t = g.V().has( prop ).asScala.toList
+
+      val result = genericController.retrieveNodeProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length == t.length mustBe true
+
+    }
+  }
+
+  "The property search controller" should {
+    "be able to return a list of 1" in {
+      graph.traversal().V().drop().iterate()
+      ImportJSONStorageGraph.populateGraph( graph )
+
+      val prop = "test"
+      val t = g.V().has( prop ).asScala.toList
+
+      val result = genericController.retrieveNodeProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length == t.length mustBe true
+
+    }
+  }
+
+  "The property search controller" should {
+    "return an empty list" in {
+      val prop = "month"
+
+      val result = genericController.retrieveNodeProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe 0
     }
   }
 }

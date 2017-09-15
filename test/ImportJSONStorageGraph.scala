@@ -52,3 +52,11 @@ object ImportJSONStorageNoBucketsGraph {
     graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
   }
 }
+
+object ImportJSONStorageNoFilesGraph {
+
+  def populateGraph( graph: Graph ): Unit = {
+    val inputStream = getClass.getResourceAsStream( "/test-nofiles.json" )
+    graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
+  }
+}

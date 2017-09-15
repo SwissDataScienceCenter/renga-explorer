@@ -18,8 +18,6 @@
 
 package controllers
 
-import java.util
-
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
 import ch.datascience.graph.Constants
 import ch.datascience.graph.elements.persisted.PersistedVertex
@@ -94,7 +92,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
   "The lineage from context controller" should {
     "return an empty list if the id of the node is not a deployernode" in {
-      val result = lineageController.lineageFromContext( ( "0" ).toLong ).apply( fakerequest )
+      val result = lineageController.lineageFromContext( "0".toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
       content.length mustBe 0
@@ -120,7 +118,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   "The lineage from file controller" should {
     "return an empty list if the filenode does not exist" in {
-      val result = lineageController.lineageFromContext( ( "0" ).toLong ).apply( fakerequest )
+      val result = lineageController.lineageFromContext( "0".toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
       content.length mustBe 0
