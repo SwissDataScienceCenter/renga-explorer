@@ -24,3 +24,4 @@ GET      /lineage/file/:id                        controllers.LineageExplorerCon
 GET      /projects                                controllers.ProjectExplorerController.retrieveProjects
 GET      /projects/user                           controllers.ProjectExplorerController.retrieveProjectByUserName(userId: Option[String] )
 GET      /projects/:id                            controllers.ProjectExplorerController.retrieveProjectMetadata( id: Long )
+GET      /projects/:id/lineage                    controllers.ProjectExplorerController.retrieveProjectLineage(id: Long)

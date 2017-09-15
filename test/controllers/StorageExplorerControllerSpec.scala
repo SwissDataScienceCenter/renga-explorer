@@ -29,7 +29,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONStorageGraph
+import helpers.{ ImportJSONStorageGraph, ImportJSONStorageNoBucketsGraph }
 import org.apache.tinkerpop.gremlin.process.traversal.P
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
@@ -101,6 +101,19 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  "The bucket exploration controller" should {
+    "return no buckets if there are none in the graph" in {
+      graph.traversal().V().drop().iterate()
+      ImportJSONStorageNoBucketsGraph.populateGraph( graph )
+
+      val result = explorerController.bucketList().apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      content.length mustBe 0
+
+    }
+  }
+
   def graphBucketMeta( nodeId: String ) = {
     val graphBucketName = g.V( nodeId ).values[String]( "resource:bucket_name" ).asScala.toList.head
     val graphBucketBackend = g.V( nodeId ).values[String]( "resource:bucket_backend" ).asScala.toList.head
@@ -127,6 +140,19 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       ( bucketName == graphBucketMetaData( 0 ) ) mustBe true
       ( bucketBackend == graphBucketMetaData( 1 ) ) mustBe true
       ( bucketBackedId == graphBucketMetaData( 2 ) ) mustBe true
+    }
+  }
+
+  "The bucket metadata exploration controller" should {
+    "return nothing if the node is not a bucket" in {
+      val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
+      val t = g.V( fileId ).has( Constants.TypeKey, "resource:bucket" )
+
+      val result = explorerController.bucketMetadata( fileId.toString.toLong ).apply( fakerequest )
+      val content = result.value
+
+      content.toString mustBe "None"
+
     }
   }
 
@@ -184,7 +210,6 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The file metadata exploration controller" should {
-
     "return all metadata of a file" in {
 
       val graphFiles = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
@@ -211,11 +236,9 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   "The file meta data from path exploration controller" should {
     "return all metadata of a file " in {
 
-      // find a file in the graph to use for tests
       val graphFile = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList.head
       val path = graphFile.values[String]( "resource:file_name" ).asScala.toList.head
 
-      // a file might be stored in several buckets but the function requires only 1
       val bucketId = g.V().out( "resource:has_location" ).out( "resource:stored_in" ).asScala.toList.head
       val result = explorerController.fileMetadatafromPath( bucketId.id.toString.toLong, path ).apply( fakerequest )
       val content = contentAsJson( result ).as[Map[String, PersistedVertex]]

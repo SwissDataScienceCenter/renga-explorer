@@ -150,7 +150,7 @@ class StorageExplorerController @Inject() (
   def bucketMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve bucket metadata from bucket with " + id )
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) )
+    val t = g.V( Long.box( id ) ).has( Constants.TypeKey, "resource:bucket" )
 
     val future: Future[Option[PersistedVertex]] = graphExecutionContext.execute {
       if ( t.hasNext ) {
@@ -170,6 +170,7 @@ class StorageExplorerController @Inject() (
       case None => NotFound
     }
   }
+
   def retrievefileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve all file versions from file with id" + id )
     val g = graphTraversalSource
