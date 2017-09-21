@@ -18,24 +18,26 @@
 
 package helpers
 
-import org.apache.tinkerpop.gremlin.structure.Graph
-import org.apache.tinkerpop.gremlin.structure.io.IoCore
+/**
+ * Created by 3C111 on 26.09.2017
+ */
 
-object ImportJSONGraph {
+object ObjectMatcher {
+  def matcher( x: Object ): String = {
+    x match {
 
-  def populateGraph( graph: Graph, file: String ): Unit = {
-    val inputStream = getClass.getResourceAsStream( file )
-    graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
+      case item: java.lang.String    => item
+      case item: java.lang.Long      => item.toString
+      case item: java.lang.Character => item.toString
+      case item: java.lang.Boolean   => item.toString
+      case item: java.lang.Byte      => item.toString
+      case item: java.lang.Short     => item.toString
+      case item: java.lang.Integer   => item.toString
+      case item: java.lang.Float     => item.toString
+      case item: java.lang.Double    => item.toString
+      case item: java.util.UUID      => item.toString
+      case _                         => "Failed"
+    }
+
   }
-
-  def storageGraph( graph: Graph ) = populateGraph( graph, "/test-graph-storage.json" )
-
-  def noFilesGraph( graph: Graph ) = populateGraph( graph, "/test-nofiles.json" )
-
-  def noBucketsGraph( graph: Graph ) = populateGraph( graph, "/test-nobuckets.json" )
-
-  def lineageGraph( graph: Graph ) = populateGraph( graph, "/test-lineage.json" )
-
-  def projectGraph( graph: Graph ) = populateGraph( graph, "/test-project.json" )
 }
-

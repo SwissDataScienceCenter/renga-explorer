@@ -27,6 +27,7 @@ import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
+import helpers.ObjectMatcher
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import org.apache.tinkerpop.gremlin.structure.Edge
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -111,14 +112,28 @@ class GenericExplorerController @Inject() (
       else
         Future.successful( List() )
     }
-
     future.map( i => Ok( Json.toJson( i ) ) )
+  }
 
+  def getValuesForProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+
+    Logger.debug( "Request to retrieve values for property " + property )
+
+    val g = graphTraversalSource
+    val t = g.V().values[java.lang.Object]( property )
+
+    val future: Future[List[String]] = graphExecutionContext.execute {
+      Future( for ( v <- t.asScala.toList ) yield {
+
+        ObjectMatcher.matcher( v )
+      } )
+    }
+    future.map( s => Ok( Json.toJson( s ) ) )
   }
 
   //Search for nodes with a property and value in a graph
-  def retrieveNodePropertyAndValue( property: String, value: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve node(s) with property " + property )
+  def retrieveNodePropertyAndValue( property: String, value: Any ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve node(s) with property " + property + " and value " + value )
     val g = graphTraversalSource
     val t = g.V().has( property, value )
 
@@ -134,7 +149,6 @@ class GenericExplorerController @Inject() (
     }
 
     future.map( i => Ok( Json.toJson( i ) ) )
-
   }
 
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat

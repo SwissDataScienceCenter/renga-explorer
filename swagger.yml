@@ -236,6 +236,24 @@ paths:
       security:
       - token_auth:
         - 'profile'
+  /graph/{prop}/values:
+    get:
+      tags:
+         - 'Explorer-Graph'
+      summary: 'Listing property values'
+      description:  'List all values belonging to a specific property'
+      parameters:
+      - name: property
+        in: path
+        description: 'prop'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /graph/nodes/{prop}/{value}:
     get:
       tags:
@@ -297,6 +315,24 @@ paths:
       security:
       - token_auth:
         - 'profile'
+  /lineage/project/{projectNodeId}:
+    get:
+      tags:
+         - 'Explorer-Lineage'
+      summary: 'Get project lineage'
+      description:  'Get project lineage for projectnode with projectNodeId'
+      parameters:
+      - name: projectNodeId
+        in: path
+        description: 'Project node id'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /projects:
     get:
       tags:
@@ -333,24 +369,6 @@ paths:
          - 'Explorer-Projects'
       summary: 'Get metadata'
       description:  'Get metadatea for projectnode with projectNodeId'
-      parameters:
-      - name: projectNodeId
-        in: path
-        description: 'Project node id'
-        required: true
-        type: string
-      responses:
-        200:
-          description: 'Ok'
-      security:
-      - token_auth:
-        - 'profile'
-  /projects/{projectNodeId}/lineage:
-    get:
-      tags:
-         - 'Explorer-Projects'
-      summary: 'Get project lineage'
-      description:  'Get project lineage for projectnode with projectNodeId'
       parameters:
       - name: projectNodeId
         in: path

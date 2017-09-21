@@ -28,7 +28,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONLineageGraph
+import helpers.ImportJSONGraph
 import helpers.ListConversions.ensureList
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
@@ -65,7 +65,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
 
   before {
-    ImportJSONLineageGraph.populateGraph( graph )
+    ImportJSONGraph.lineageGraph( graph )
   }
 
   after {
@@ -86,13 +86,13 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = lineageController.lineageFromContext( deployerid.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
-      ( content.length == s.length ) mustBe true
+      content.length mustBe s.length
 
     }
   }
   "The lineage from context controller" should {
     "return an empty list if the id of the node is not a deployernode" in {
-      val result = lineageController.lineageFromContext( "0".toLong ).apply( fakerequest )
+      val result = lineageController.lineageFromContext( 0L ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
       content.length mustBe 0
@@ -112,16 +112,31 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = lineageController.lineageFromFile( fileId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
-      ( content.length == s.length ) mustBe true
+      content.length mustBe s.length
     }
   }
 
   "The lineage from file controller" should {
     "return an empty list if the filenode does not exist" in {
-      val result = lineageController.lineageFromContext( "0".toLong ).apply( fakerequest )
+      val result = lineageController.lineageFromContext( 0L ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
       content.length mustBe 0
+
+    }
+  }
+
+  "The project lineage query" should {
+    "return all associated files and buckets, and execution and context nodes" in {
+      graph.traversal().V().drop().iterate()
+      ImportJSONGraph.projectGraph( graph )
+
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+
+      val t = g.V( projectId ).repeat( __.bothE( "deployer:launch", "project:is_part_of" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+
+      val result = lineageController.retrieveProjectLineage( projectId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result )
 
     }
   }

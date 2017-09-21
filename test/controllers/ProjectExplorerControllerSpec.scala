@@ -29,8 +29,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONProjectGraph
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
+import helpers.ImportJSONGraph
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -70,7 +69,7 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
 
   before {
-    ImportJSONProjectGraph.populateGraph( graph )
+    ImportJSONGraph.projectGraph( graph )
   }
 
   after {
@@ -86,8 +85,7 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = projectController.retrieveProjects().apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
-      ( content.length == graphFiles.length ) mustBe true
-
+      content.length mustBe graphFiles.length
     }
   }
 
@@ -100,7 +98,7 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = projectController.retrieveProjectByUserName( Option( user ) ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
-      ( content.length == graphList.length ) mustBe true
+      content.length mustBe graphList.length
     }
   }
   "The project metadata query" should {
@@ -116,21 +114,8 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val contentProjectName = content.properties.get( NamespaceAndName( "project", "project_name" ) ).orNull.values.head.self
       val contentProjectOwner = content.properties.get( NamespaceAndName( "resource", "owner" ) ).orNull.values.head.self
 
-      ( contentProjectName == graphProjectName ) mustBe true
-      ( graphProjectOwner == contentProjectOwner ) mustBe true
-    }
-  }
-
-  "The project lineage query" should {
-    "return all associated files and buckets, and execution and context nodes" in {
-      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
-
-      val t = g.V( projectId ).repeat( __.bothE( "deployer:launch", "project:is_part_of" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
-
-      val result = projectController.retrieveProjectLineage( projectId.toString.toLong ).apply( fakerequest )
-
-      val content = contentAsJson( result )
-
+      contentProjectName mustBe graphProjectName
+      graphProjectOwner mustBe contentProjectOwner
     }
   }
 }
