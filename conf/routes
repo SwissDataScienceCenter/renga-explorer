@@ -17,6 +17,8 @@ GET      /storage                                 controllers.StorageExplorerCon
 
 GET      /graph/full                              controllers.GenericExplorerController.retrieveGraphSubset
 GET      /graph/node/:id                          controllers.GenericExplorerController.retrieveNodeMetaData( id: Long )
+GET      /graph/nodes/:prop                       controllers.GenericExplorerController.retrieveNodeProperty( prop: String )
+GET      /graph/nodes/:prop/:value                controllers.GenericExplorerController.retrieveNodePropertyAndValue( prop: String, value: String)
 
 GET      /lineage/context/:id                     controllers.LineageExplorerController.lineageFromContext(id: Long)
 GET      /lineage/file/:id                        controllers.LineageExplorerController.lineageFromFile(id: Long)

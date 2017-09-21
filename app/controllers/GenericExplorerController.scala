@@ -95,11 +95,32 @@ class GenericExplorerController @Inject() (
     future.map( i => Ok( Json.toJson( i ) ) )
   }
 
-  //Search for labels in a graph
+  //Search for nodes with a property in a graph
   def retrieveNodeProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve node(s) with property " + property )
     val g = graphTraversalSource
     val t = g.V().has( property )
+
+    val future: Future[List[PersistedVertex]] = {
+      if ( t.hasNext ) {
+        Future.sequence(
+          for ( vertex <- t.asScala.toList ) yield vertexReader.read( vertex )
+        )
+      }
+
+      else
+        Future.successful( List() )
+    }
+
+    future.map( i => Ok( Json.toJson( i ) ) )
+
+  }
+
+  //Search for nodes with a property and value in a graph
+  def retrieveNodePropertyAndValue( property: String, value: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve node(s) with property " + property )
+    val g = graphTraversalSource
+    val t = g.V().has( property, value )
 
     val future: Future[List[PersistedVertex]] = {
       if ( t.hasNext ) {

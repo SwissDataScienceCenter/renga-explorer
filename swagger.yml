@@ -218,6 +218,47 @@ paths:
       security:
       - token_auth:
         - 'profile'
+  /graph/nodes/{prop}:
+    get:
+      tags:
+         - 'Explorer-Graph'
+      summary: 'Node property search'
+      description:  'Search nodes in the graph that have a specific property'
+      parameters:
+      - name: property
+        in: path
+        description: 'prop'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /graph/nodes/{prop}/{value}:
+    get:
+      tags:
+         - 'Explorer-Graph'
+      summary: 'Node property value search'
+      description:  'Search nodes in graph on property value pair'
+      parameters:
+      - name: property
+        in: path
+        description: 'prop'
+        required: true
+        type: string
+      - name: value
+        in: path
+        description: 'value'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /lineage/context/{contextId}:
     get:
       tags:

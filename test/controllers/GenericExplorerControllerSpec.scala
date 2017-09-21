@@ -153,5 +153,52 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       content.length mustBe 0
     }
   }
+
+  "The property value controller " should {
+    "return all nodes who have specific value for the property" in {
+      graph.traversal().V().drop().iterate()
+      ImportJSONStorageGraph.populateGraph( graph )
+
+      val prop = "importance"
+      val value = "high"
+      val t = g.V().has( prop, value ).asScala.toList
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length == t.length mustBe true
+    }
+  }
+
+  "The property value controller " should {
+    "return an empty list if that property is not found" in {
+      graph.traversal().V().drop().iterate()
+      ImportJSONStorageGraph.populateGraph( graph )
+
+      val prop = "importance"
+      val value = "urgent"
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe 0
+
+    }
+  }
+
+  "The property value controller " should {
+    "return an empty list if the value for that property is not found" in {
+      graph.traversal().V().drop().iterate()
+      ImportJSONStorageGraph.populateGraph( graph )
+
+      val prop = "coffee"
+      val value = "strong"
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe 0
+    }
+  }
 }
 
