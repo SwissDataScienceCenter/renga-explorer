@@ -28,14 +28,14 @@ object ImportJSONGraph {
     graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
   }
 
-  def storageGraph( graph: Graph ) = populateGraph( graph, "/test-graph-storage.json" )
+  def storageGraph( graph: Graph ): Unit = populateGraph( graph, "/test-graph-storage.json" )
 
-  def noFilesGraph( graph: Graph ) = populateGraph( graph, "/test-nofiles.json" )
+  def noFilesGraph( graph: Graph ): Unit = populateGraph( graph, "/test-nofiles.json" )
 
-  def noBucketsGraph( graph: Graph ) = populateGraph( graph, "/test-nobuckets.json" )
+  def noBucketsGraph( graph: Graph ): Unit = populateGraph( graph, "/test-nobuckets.json" )
 
-  def lineageGraph( graph: Graph ) = populateGraph( graph, "/test-lineage.json" )
+  def lineageGraph( graph: Graph ): Unit = populateGraph( graph, "/test-lineage.json" )
 
-  def projectGraph( graph: Graph ) = populateGraph( graph, "/test-project.json" )
+  def projectGraph( graph: Graph ): Unit = populateGraph( graph, "/test-project.json" )
 }
 

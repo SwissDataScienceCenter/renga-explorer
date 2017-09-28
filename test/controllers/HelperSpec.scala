@@ -94,7 +94,7 @@ class HelperSpec extends PlaySpec with MockitoSugar {
 
   "The Object matcher " should {
     "return a string for a java UUID" in {
-      val u = UUID.randomUUID().asInstanceOf[java.util.UUID]
+      val u = UUID.randomUUID()
       val s = ObjectMatcher.matcher( u )
       s mustBe a[java.lang.String]
     }
@@ -103,8 +103,8 @@ class HelperSpec extends PlaySpec with MockitoSugar {
   "The Object matcher" should {
     "throw an error if the Object is a list" in {
       val l = List( 1, 2, 3 )
-      val s = ObjectMatcher.matcher( l )
-      s mustBe "Failed"
+      a[UnsupportedOperationException] must be thrownBy ObjectMatcher.matcher( l )
+
     }
   }
 }

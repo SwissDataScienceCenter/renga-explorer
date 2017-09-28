@@ -258,10 +258,11 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Map[String, PersistedVertex]]
 
       val fileName = getFileNameMeta( content )
-      val graphFileName = g.V().has( "resource:file_name", "file_01.txt" ).values[String]( "resource:file_name" )
+      val graphFileName = g.V().has( "resource:file_name", fileName ).values[String]( "resource:file_name" ).asScala.toList.head
+
+      graphFileName mustBe fileName
 
       val bucketMetaValues = getBucketMeta( content )
-
       val graphBucketMetaData = graphBucketMeta( bucketId.id.toString )
 
       graphBucketMetaData( 0 ) mustBe bucketMetaValues( 0 )

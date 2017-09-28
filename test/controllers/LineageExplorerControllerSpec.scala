@@ -137,7 +137,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val result = lineageController.retrieveProjectLineage( projectId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result )
-
+      // TODO fix test
     }
   }
 }

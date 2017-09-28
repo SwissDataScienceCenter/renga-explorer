@@ -36,7 +36,7 @@ object ObjectMatcher {
       case item: java.lang.Float     => item.toString
       case item: java.lang.Double    => item.toString
       case item: java.util.UUID      => item.toString
-      case _                         => "Failed"
+      case _                         => throw new UnsupportedOperationException( "Type not supported" )
     }
 
   }
