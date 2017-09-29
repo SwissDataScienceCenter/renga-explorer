@@ -18,11 +18,13 @@
 
 package controllers
 
+import java.util.UUID
 import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json._
+import ch.datascience.graph.types.DataType
 import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
@@ -97,7 +99,7 @@ class GenericExplorerController @Inject() (
   }
 
   //Search for nodes with a property in a graph
-  def retrieveNodeProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+  def retrieveNodesWithProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve node(s) with property " + property )
     val g = graphTraversalSource
     val t = g.V().has( property )
@@ -125,32 +127,38 @@ class GenericExplorerController @Inject() (
     val future: Future[List[String]] = graphExecutionContext.execute {
       Future( for ( v <- t.asScala.toList ) yield {
 
-        ObjectMatcher.matcher( v )
+        ObjectMatcher.objectToString( v )
       } )
     }
     future.map( s => Ok( Json.toJson( s ) ) )
   }
 
   //Search for nodes with a property and value in a graph
-  def retrieveNodePropertyAndValue( property: String, value: Any ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+  def retrieveNodePropertyAndValue( property: String, value: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve node(s) with property " + property + " and value " + value )
+
     val g = graphTraversalSource
-    val t = g.V().has( property, value )
+    val valueClass = g.V().values[java.lang.Object]( property ).asScala.toList
 
-    val future: Future[List[PersistedVertex]] = {
-      if ( t.hasNext ) {
-        Future.sequence(
-          for ( vertex <- t.asScala.toList ) yield vertexReader.read( vertex )
-        )
+    val future: Future[List[PersistedVertex]] =
+      if ( valueClass.nonEmpty ) {
+
+        val convertedValue = ObjectMatcher.stringToJava( value, valueClass.head )
+        val t = g.V().has( property, convertedValue )
+        if ( t.hasNext ) {
+          Future.sequence(
+            for ( vertex <- t.asScala.toList ) yield vertexReader.read( vertex )
+          )
+        }
+
+        else
+          Future.successful( List() ) // No nodes with the value exist
       }
-
-      else
-        Future.successful( List() )
-    }
+      else Future.successful( List() ) // No values exist for this property
 
     future.map( i => Ok( Json.toJson( i ) ) )
-  }
 
+  }
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 }

@@ -21,13 +21,14 @@ package controllers
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
 import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json._
+import ch.datascience.graph.types.DataType
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.scope.Scope
 import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONGraph
+import helpers.{ ImportJSONGraph, ObjectMatcher }
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -116,7 +117,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val prop = "importance"
       val t = g.V().has( prop ).asScala.toList
 
-      val result = genericController.retrieveNodeProperty( prop ).apply( fakerequest )
+      val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
       content.length mustBe t.length
@@ -129,7 +130,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val prop = "test"
       val t = g.V().has( prop ).asScala.toList
 
-      val result = genericController.retrieveNodeProperty( prop ).apply( fakerequest )
+      val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
       content.length mustBe t.length
@@ -141,7 +142,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val prop = "month"
 
-      val result = genericController.retrieveNodeProperty( prop ).apply( fakerequest )
+      val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
       content.length mustBe 0
@@ -222,6 +223,36 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
       content.length mustBe 0
+    }
+  }
+  "The property value controller " should {
+    "return a proper list if the value is not a string" in {
+      val prop = "system:creation_time"
+      val value = "1504099639855"
+
+      val t1 = g.V().values[java.lang.Object]( prop ).asScala.toList.head
+      val v2 = ObjectMatcher.stringToJava( value, t1 )
+
+      val t = g.V().has( prop, v2 ).asScala.toList
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+
+    }
+  }
+
+  "The property value controller " should {
+    "return a proper list if the value is a string with numbers" in {
+      val prop = "city"
+      val value = "1234"
+      val t = g.V().has( prop, value ).asScala.toList
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
     }
   }
 }

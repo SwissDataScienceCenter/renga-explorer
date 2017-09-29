@@ -18,12 +18,14 @@
 
 package helpers
 
+import java.util.UUID
+
 /**
  * Created by 3C111 on 26.09.2017
  */
 
 object ObjectMatcher {
-  def matcher( x: Object ): String = {
+  def objectToString( x: Object ): String = {
     x match {
 
       case item: java.lang.String    => item
@@ -36,6 +38,22 @@ object ObjectMatcher {
       case item: java.lang.Float     => item.toString
       case item: java.lang.Double    => item.toString
       case item: java.util.UUID      => item.toString
+      case _                         => throw new UnsupportedOperationException( "Type not supported" )
+    }
+  }
+  def stringToJava( value: String, c: Any ): Any = {
+    c match {
+
+      case item: java.lang.String    => value
+      case item: java.lang.Long      => value.toLong
+      case item: java.lang.Character => value.asInstanceOf[Char]
+      case item: java.lang.Boolean   => value.toBoolean
+      case item: java.lang.Byte      => value.toByte
+      case item: java.lang.Short     => value.toShort
+      case item: java.lang.Integer   => value.toInt
+      case item: java.lang.Float     => value.toFloat
+      case item: java.lang.Double    => value.toDouble
+      case item: java.util.UUID      => UUID.fromString( value )
       case _                         => throw new UnsupportedOperationException( "Type not supported" )
     }
 
