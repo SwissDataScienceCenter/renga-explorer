@@ -25,6 +25,7 @@ import java.util.UUID
  */
 
 object ObjectMatcher {
+
   def objectToString( x: Object ): String = {
     x match {
 
@@ -41,12 +42,13 @@ object ObjectMatcher {
       case _                         => throw new UnsupportedOperationException( "Type not supported" )
     }
   }
-  def stringToJava( value: String, c: Any ): Any = {
+
+  def stringToGivenType( value: String, c: Any ): Any = {
     c match {
 
       case item: java.lang.String    => value
       case item: java.lang.Long      => value.toLong
-      case item: java.lang.Character => value.asInstanceOf[Char]
+      case item: java.lang.Character => value.head
       case item: java.lang.Boolean   => value.toBoolean
       case item: java.lang.Byte      => value.toByte
       case item: java.lang.Short     => value.toShort

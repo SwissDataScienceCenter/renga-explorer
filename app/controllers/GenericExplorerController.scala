@@ -18,13 +18,11 @@
 
 package controllers
 
-import java.util.UUID
 import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json._
-import ch.datascience.graph.types.DataType
 import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
@@ -143,7 +141,7 @@ class GenericExplorerController @Inject() (
     val future: Future[List[PersistedVertex]] =
       if ( valueClass.nonEmpty ) {
 
-        val convertedValue = ObjectMatcher.stringToJava( value, valueClass.head )
+        val convertedValue = ObjectMatcher.stringToGivenType( value, valueClass.head )
         val t = g.V().has( property, convertedValue )
         if ( t.hasNext ) {
           Future.sequence(

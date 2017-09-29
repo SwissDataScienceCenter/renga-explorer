@@ -21,7 +21,6 @@ package controllers
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
 import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json._
-import ch.datascience.graph.types.DataType
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.scope.Scope
 import ch.datascience.test.security.FakeRequestWithToken._
@@ -163,8 +162,22 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The value search controller" should {
-    "return a list of non-string values" in {
+    "return a list of non-string values (long)" in {
       val prop = "system:creation_time"
+      val t = g.V().values[Any]( prop ).asScala.toList
+      val stringified_t = for ( i <- t ) yield i.toString()
+
+      val result = genericController.getValuesForProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[String]]
+
+      content.length mustBe t.length
+      content.toSet mustBe stringified_t.toSet
+    }
+  }
+
+  "The value search controller" should {
+    "return a list of non-string values (char)" in {
+      val prop = "testchar"
       val t = g.V().values[Any]( prop ).asScala.toList
       val stringified_t = for ( i <- t ) yield i.toString()
 
@@ -198,6 +211,10 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[PersistedVertex]]
       content.length mustBe t.length
+
+      val tids = t.map( x => x.id() )
+      val contentids = content.map( t => t.id )
+      contentids.toSet mustBe tids.toSet
     }
   }
 
@@ -231,7 +248,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val value = "1504099639855"
 
       val t1 = g.V().values[java.lang.Object]( prop ).asScala.toList.head
-      val v2 = ObjectMatcher.stringToJava( value, t1 )
+      val v2 = ObjectMatcher.stringToGivenType( value, t1 )
 
       val t = g.V().has( prop, v2 ).asScala.toList
 
@@ -240,6 +257,31 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       content.length mustBe t.length
 
+      val tids = t.map( x => x.id() )
+      val contentids = content.map( t => t.id )
+      contentids.toSet mustBe tids.toSet
+
+    }
+  }
+
+  "The property value controller" should {
+    "return a proper list if the value searched for is a char" in {
+      val prop = "testchar"
+      val value = "a"
+
+      val t1 = g.V().values[java.lang.Object]( prop ).asScala.toList.head
+      val v2 = ObjectMatcher.stringToGivenType( value, t1 )
+
+      val t = g.V().has( prop, v2 ).asScala.toList
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+
+      val tids = t.map( x => x.id() )
+      val contentids = content.map( t => t.id )
+      contentids.toSet mustBe tids.toSet
     }
   }
 
@@ -253,6 +295,10 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
       content.length mustBe t.length
+
+      val tids = t.map( x => x.id() )
+      val contentids = content.map( t => t.id )
+      contentids.toSet mustBe tids.toSet
     }
   }
 }
