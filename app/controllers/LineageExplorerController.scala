@@ -112,6 +112,34 @@ class LineageExplorerController @Inject() (
     }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
   }
 
+  def retrieveProjectLineage( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve project lineave for project node with id " + id )
+
+    val g = graphTraversalSource
+    val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "project:is_part_of" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+
+    val seq = graphExecutionContext.execute {
+
+      for {
+        entry <- t.asScala.toList
+        s = entry.asScala.toMap
+        edges = ensureList[Edge]( s( "edge" ) )
+        vertices = ensureList[Vertex]( s( "node" ) )
+        ( edge, vertex ) <- edges zip vertices
+      } yield ( edge, vertex )
+
+    }
+
+    Future.traverse( seq ) {
+      case ( edge, vertex ) =>
+        for {
+          e <- edgeReader.read( edge )
+          v <- vertexReader.read( vertex )
+
+        } yield ( e, v )
+    }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
+  }
+
   private[this] implicit lazy val persistedVertexFormat: Format[PersistedVertex] = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat: Format[PersistedEdge] = PersistedEdgeFormat
 }

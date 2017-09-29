@@ -29,7 +29,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.{ ImportJSONStorageGraph, ImportJSONStorageNoBucketsGraph }
+import helpers.ImportJSONGraph
 import org.apache.tinkerpop.gremlin.process.traversal.P
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
@@ -66,7 +66,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
 
   before {
-    ImportJSONStorageGraph.populateGraph( graph )
+    ImportJSONGraph.storageGraph( graph )
   }
 
   after {
@@ -93,24 +93,23 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = explorerController.bucketList().apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
-      val contentBucketIds = for ( item <- content ) yield ( item.id )
+      val contentBucketIds = for ( item <- content ) yield item.id
 
       val graphBucketIds = getBucketsFromGraph()
 
-      ( contentBucketIds.toSet == graphBucketIds.toSet ) mustBe true
+      contentBucketIds.toSet mustBe graphBucketIds.toSet
     }
   }
 
   "The bucket exploration controller" should {
     "return no buckets if there are none in the graph" in {
       graph.traversal().V().drop().iterate()
-      ImportJSONStorageNoBucketsGraph.populateGraph( graph )
+      ImportJSONGraph.noBucketsGraph( graph )
 
       val result = explorerController.bucketList().apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       content.length mustBe 0
-
     }
   }
 
@@ -137,25 +136,27 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val graphBucketMetaData = graphBucketMeta( graphBucketId.toString )
 
-      ( bucketName == graphBucketMetaData( 0 ) ) mustBe true
-      ( bucketBackend == graphBucketMetaData( 1 ) ) mustBe true
-      ( bucketBackedId == graphBucketMetaData( 2 ) ) mustBe true
+      bucketName mustBe graphBucketMetaData( 0 )
+      bucketBackend mustBe graphBucketMetaData( 1 )
+      bucketBackedId mustBe graphBucketMetaData( 2 )
     }
   }
 
-  "The bucket metadata exploration controller" should {
+  /*"The bucket metadata exploration controller" should {
     "return nothing if the node is not a bucket" in {
       val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
-      val t = g.V( fileId ).has( Constants.TypeKey, "resource:bucket" )
+      val t = g.V( fileId ).has( Constants.TypeKey, "resource:bucket" ).next()
+
+      println( "Wrong bucket test: ", fileId, g.V( fileId ).valueMap() )
+      println( "graphresult: " + t )
 
       val result = explorerController.bucketMetadata( fileId.toString.toLong ).apply( fakerequest )
       val content = result.value
 
       content.toString mustBe "None"
-
     }
   }
-
+*/
   "The file exploration controller" should {
     "return all files in a bucket" in {
       // file location not bucket -> find bucket connected to file location
@@ -169,9 +170,24 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val graphFiles = g.V( graphBucketId ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
       val graphFileNames = for ( file <- graphFiles ) yield file.value[String]( "resource:file_name" )
-      ( content.length == graphFiles.length ) mustBe true
-      ( fileNames.toList == graphFileNames ) mustBe true
 
+      content.length mustBe graphFiles.length
+      fileNames.toList mustBe graphFileNames
+    }
+  }
+
+  "The file exploration controller" should {
+    "return an empty list if there are no files in the bucket" in {
+      graph.traversal().V().drop().iterate()
+      ImportJSONGraph.noFilesGraph( graph )
+
+      val graphBucketId = getBucketsFromGraph().head
+      val bucketId = graphBucketId.toString.toLong
+
+      val result = explorerController.fileList( bucketId ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      content.length mustBe 0
     }
   }
 
@@ -188,10 +204,8 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
       val contentTimeStamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
 
-      ( content.length == graphVersions.length ) mustBe true
-
-      ( contentTimeStamps.toSet == graphVersionTimeStamps.toSet ) mustBe true
-
+      content.length mustBe graphVersions.length
+      contentTimeStamps.toSet mustBe graphVersionTimeStamps.toSet
     }
   }
 
@@ -221,15 +235,15 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val fileName = getFileNameMeta( content )
       val graphFileName = g.V( graphFileId ).values[String]( "resource:file_name" ).asScala.toList.head
 
-      ( graphFileName == fileName ) mustBe true
+      graphFileName mustBe fileName
 
       val bucketMetaValues = getBucketMeta( content )
 
       val graphFileBucketId = g.V( graphFileId ).out( "resource:has_location" ).out( "resource:stored_in" ).has( Constants.TypeKey, "resource:bucket" ).asScala.toList.head.id()
       val graphBucketMetaData = graphBucketMeta( graphFileBucketId.toString )
 
-      ( graphBucketMetaData( 0 ) == bucketMetaValues( 0 ) ) mustBe true
-      ( graphBucketMetaData( 1 ) == bucketMetaValues( 1 ) ) mustBe true
+      graphBucketMetaData( 0 ) mustBe bucketMetaValues( 0 )
+      graphBucketMetaData( 1 ) mustBe bucketMetaValues( 1 )
     }
   }
 
@@ -244,15 +258,15 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Map[String, PersistedVertex]]
 
       val fileName = getFileNameMeta( content )
-      val graphFileName = g.V().has( "resource:file_name", "file_01.txt" ).values[String]( "resource:file_name" )
+      val graphFileName = g.V().has( "resource:file_name", fileName ).values[String]( "resource:file_name" ).asScala.toList.head
+
+      graphFileName mustBe fileName
 
       val bucketMetaValues = getBucketMeta( content )
-
       val graphBucketMetaData = graphBucketMeta( bucketId.id.toString )
 
-      ( graphBucketMetaData( 0 ) == bucketMetaValues( 0 ) ) mustBe true
-      ( graphBucketMetaData( 1 ) == bucketMetaValues( 1 ) ) mustBe true
-
+      graphBucketMetaData( 0 ) mustBe bucketMetaValues( 0 )
+      graphBucketMetaData( 1 ) mustBe bucketMetaValues( 1 )
     }
   }
 
@@ -268,12 +282,26 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val graph = g.V().has( "system:creation_time", P.between( date1, date2 ) ).asScala.toList
 
-      ( graph.length == content.length ) mustBe true
+      graph.length mustBe content.length
 
       val contentTimestamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
       val graphTimestamps = for ( vertex <- graph ) yield vertex.value[Long]( "system:creation_time" )
 
-      ( contentTimestamps.toSet == graphTimestamps.toSet ) mustBe true
+      contentTimestamps.toSet mustBe graphTimestamps.toSet
+    }
+  }
+
+  "The date search controller" should {
+    "return an empty list if no nodes have the timestamp requested " in {
+      val graphFile = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList
+      val dates = graphFile.head.values[Long]( "system:creation_time" ).asScala.toList
+
+      val date1 = dates.head + 100
+      val date2 = dates.last + 101
+      val result = explorerController.retrieveFilesDate( date1, date2 ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      content.length mustBe 0
     }
   }
 
@@ -287,7 +315,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       // Assuming our test graph is not larger than 100 nodes
-      ( t.length == content.length ) mustBe true
+      t.length mustBe content.length
 
       val content_owners = for ( vertex <- content ) yield vertex.properties.get( NamespaceAndName( "resource", "owner" ) ).orNull.values.head.self
 

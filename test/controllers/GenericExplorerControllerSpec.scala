@@ -27,7 +27,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONStorageGraph
+import helpers.{ ImportJSONGraph, ObjectMatcher }
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -66,7 +66,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
 
   before {
-    ImportJSONStorageGraph.populateGraph( graph )
+    ImportJSONGraph.storageGraph( graph )
   }
 
   after {
@@ -106,8 +106,199 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = genericController.retrieveNodeMetaData( nodeId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result )
 
-      ( content.toString() == "null" ) mustBe true
+      content.toString() mustBe "null"
+    }
+  }
 
+  "The property search controller" should {
+    "return the nodes of a given property if they exist" in {
+
+      val prop = "importance"
+      val t = g.V().has( prop ).asScala.toList
+
+      val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+    }
+  }
+
+  "The property search controller" should {
+    "be able to return a list of 1" in {
+
+      val prop = "test"
+      val t = g.V().has( prop ).asScala.toList
+
+      val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+    }
+  }
+
+  "The property search controller" should {
+    "return an empty list" in {
+
+      val prop = "month"
+
+      val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe 0
+    }
+  }
+
+  "The value search controller" should {
+    "return all values for a property in a list" in {
+
+      val prop = "importance"
+      val t = g.V().values[String]( prop ).asScala.toList
+
+      val result = genericController.getValuesForProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[String]]
+
+      content.toSet mustBe t.toSet
+    }
+  }
+
+  "The value search controller" should {
+    "return a list of non-string values (long)" in {
+      val prop = "system:creation_time"
+      val t = g.V().values[Any]( prop ).asScala.toList
+      val stringified_t = for ( i <- t ) yield i.toString()
+
+      val result = genericController.getValuesForProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[String]]
+
+      content.length mustBe t.length
+      content.toSet mustBe stringified_t.toSet
+    }
+  }
+
+  "The value search controller" should {
+    "return a list of non-string values (char)" in {
+      val prop = "testchar"
+      val t = g.V().values[Any]( prop ).asScala.toList
+      val stringified_t = for ( i <- t ) yield i.toString()
+
+      val result = genericController.getValuesForProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[String]]
+
+      content.length mustBe t.length
+      content.toSet mustBe stringified_t.toSet
+    }
+  }
+
+  "The value search controller" should {
+    "return an empty list of the property does not exist" in {
+
+      val prop = "coffee"
+
+      val result = genericController.getValuesForProperty( prop ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[String]]
+
+      content.length mustBe 0
+    }
+  }
+
+  "The property value controller " should {
+    "return all nodes who have specific value for the property" in {
+
+      val prop = "importance"
+      val value = "high"
+      val t = g.V().has( prop, value ).asScala.toList
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+      content.length mustBe t.length
+
+      val tids = t.map( x => x.id() )
+      val contentids = content.map( t => t.id )
+      contentids.toSet mustBe tids.toSet
+    }
+  }
+
+  "The property value controller " should {
+    "return an empty list if that property is not found" in {
+
+      val prop = "importance"
+      val value = "urgent"
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe 0
+    }
+  }
+
+  "The property value controller " should {
+    "return an empty list if the value for that property is not found" in {
+      val prop = "coffee"
+      val value = "strong"
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe 0
+    }
+  }
+  "The property value controller " should {
+    "return a proper list if the value is not a string" in {
+      val prop = "system:creation_time"
+      val value = "1504099639855"
+
+      val t1 = g.V().values[java.lang.Object]( prop ).asScala.toList.head
+      val v2 = ObjectMatcher.stringToGivenType( value, t1 )
+
+      val t = g.V().has( prop, v2 ).asScala.toList
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+
+      val tids = t.map( x => x.id() )
+      val contentids = content.map( t => t.id )
+      contentids.toSet mustBe tids.toSet
+
+    }
+  }
+
+  "The property value controller" should {
+    "return a proper list if the value searched for is a char" in {
+      val prop = "testchar"
+      val value = "a"
+
+      val t1 = g.V().values[java.lang.Object]( prop ).asScala.toList.head
+      val v2 = ObjectMatcher.stringToGivenType( value, t1 )
+
+      val t = g.V().has( prop, v2 ).asScala.toList
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+
+      val tids = t.map( x => x.id() )
+      val contentids = content.map( t => t.id )
+      contentids.toSet mustBe tids.toSet
+    }
+  }
+
+  "The property value controller " should {
+    "return a proper list if the value is a string with numbers" in {
+      val prop = "city"
+      val value = "1234"
+      val t = g.V().has( prop, value ).asScala.toList
+
+      val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+
+      val tids = t.map( x => x.id() )
+      val contentids = content.map( t => t.id )
+      contentids.toSet mustBe tids.toSet
     }
   }
 }

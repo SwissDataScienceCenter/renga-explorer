@@ -98,7 +98,6 @@ class StorageExplorerController @Inject() (
         vertexReader.read( v ) ).toSeq )
     }
     future.map( s => Ok( Json.toJson( s ) ) )
-
   }
 
   /**
