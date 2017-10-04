@@ -218,6 +218,25 @@ paths:
       security:
       - token_auth:
         - 'profile'
+  /graph/node/{nodeid}/edges:
+    get:
+      tags:
+         - 'Explorer-Graph'
+      summary: 'Edges of node'
+      description:  'Retrieve all edges from the node with nodeid'
+      parameters:
+      - name: nodeid
+        in: path
+        description: 'node id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /graph/nodes/{prop}:
     get:
       tags:
