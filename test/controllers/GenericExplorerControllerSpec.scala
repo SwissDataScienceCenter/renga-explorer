@@ -127,18 +127,6 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       content_ids.toSet mustBe t_ids.toSet
     }
   }
-  /*
-  "The edge retrieval of a node controller" should {
-    "return an empty list if the node with id exists but has no edges (somehow)" in {
-
-      val nodeId = g.V().has( "single", "node" ).asScala.toList.head.id
-
-      val result = genericController.retrieveNodeEdges( nodeId.toString.toLong ).apply( fakerequest )
-      val content = contentAsJson( result ).as[List[PersistedEdge]]
-
-      content mustBe List.empty
-    }
-  }*/
 
   "The property search controller" should {
     "return the nodes of a given property if they exist" in {
