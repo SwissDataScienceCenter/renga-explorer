@@ -28,9 +28,9 @@ lazy val root = (project in file("."))
 
 resolvers += "jitpack" at "https://jitpack.io"
 resolvers += "Oracle Released Java Packages" at "http://download.oracle.com/maven"
-resolvers += "SDSC Snapshots" at "https://testing.datascience.ch:18081/repository/maven-snapshots/"
+resolvers += Resolver.sonatypeRepo("snapshots")
 
-lazy val renga_version = "0.1.0-SNAPSHOT"
+lazy val renga_version = "0.1.0"
 libraryDependencies += "ch.datascience" %% "renga-graph-core" % renga_version
 libraryDependencies += "ch.datascience" %% "renga-commons" % renga_version exclude("org.slf4j", "slf4j-log4j12") exclude("org.slf4j", "slf4j-nop")
 

@@ -19,7 +19,8 @@
 package controllers
 
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
-import ch.datascience.graph.elements.persisted.PersistedVertex
+import ch.datascience.graph.Constants
+import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json._
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.scope.Scope
@@ -34,7 +35,6 @@ import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Reads
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 
@@ -63,7 +63,8 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   val token = tokenBuilder.sign( tokenSignerProvider.get )
   val fakerequest = FakeRequest().withToken( token )
 
-  implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
+  private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
+  private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 
   before {
     ImportJSONGraph.storageGraph( graph )
@@ -93,6 +94,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = genericController.retrieveNodeMetaData( nodeId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[PersistedVertex]
 
+      println( nodeId )
       content.properties.isEmpty mustBe false
 
       // TODO invent a test that is applicable to all cases
@@ -109,6 +111,34 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       content.toString() mustBe "null"
     }
   }
+
+  "The edge retrieval of a node controller" should {
+    "return a list of in and outgoing edges if the node with id exists" in {
+
+      val nodeId = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList.head.id
+      val t = g.V( nodeId ).bothE().asScala.toList
+      val t_ids = for ( i <- t ) yield i.id.toString
+
+      val result = genericController.retrieveNodeEdges( nodeId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedEdge]]
+      val content_ids = for ( i <- content ) yield i.id
+
+      content.length mustBe t.length
+      content_ids.toSet mustBe t_ids.toSet
+    }
+  }
+  /*
+  "The edge retrieval of a node controller" should {
+    "return an empty list if the node with id exists but has no edges (somehow)" in {
+
+      val nodeId = g.V().has( "single", "node" ).asScala.toList.head.id
+
+      val result = genericController.retrieveNodeEdges( nodeId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedEdge]]
+
+      content mustBe List.empty
+    }
+  }*/
 
   "The property search controller" should {
     "return the nodes of a given property if they exist" in {
@@ -133,18 +163,6 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
       content.length mustBe t.length
-    }
-  }
-
-  "The property search controller" should {
-    "return an empty list" in {
-
-      val prop = "month"
-
-      val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
-      val content = contentAsJson( result ).as[List[PersistedVertex]]
-
-      content.length mustBe 0
     }
   }
 
