@@ -18,11 +18,6 @@ script:
 deploy:
 - provider: script
   skip_cleanup: true
-  script: bash ./.travis/deploy-artifacts.sh
-  on:
-    branch: master
-- provider: script
-  skip_cleanup: true
   script: bash ./.travis/deploy-docker.sh
   on:
     branch: master
