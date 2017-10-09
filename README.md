@@ -16,3 +16,7 @@ $ sbt docker:publishLocal
 
 Image name and tag can be manipulated with sbt settings, see
 [sbt-native-packager](https://sbt-native-packager.readthedocs.io/en/v1.2.2/formats/docker.html).
+
+
+
+(...)
