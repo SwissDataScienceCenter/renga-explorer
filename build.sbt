@@ -28,9 +28,9 @@ lazy val root = (project in file("."))
 
 resolvers += "jitpack" at "https://jitpack.io"
 resolvers += "Oracle Released Java Packages" at "http://download.oracle.com/maven"
-resolvers += "SDSC Snapshots" at "https://testing.datascience.ch:18081/repository/maven-snapshots/"
+resolvers += Resolver.sonatypeRepo("snapshots")
 
-lazy val renga_version = "0.1.0-SNAPSHOT"
+lazy val renga_version = "0.1.0"
 libraryDependencies += "ch.datascience" %% "renga-graph-core" % renga_version
 libraryDependencies += "ch.datascience" %% "renga-commons" % renga_version exclude("org.slf4j", "slf4j-log4j12") exclude("org.slf4j", "slf4j-nop")
 
@@ -45,6 +45,10 @@ libraryDependencies += filters
 libraryDependencies += "org.janusgraph" % "janusgraph-cassandra" % janusgraph_version //% Runtime
 
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % Test
+
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.3" % Test
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.3" % Test
+libraryDependencies += "org.mockito" % "mockito-core" % "2.8.47" % Test
 
 
 import com.typesafe.sbt.packager.docker._
@@ -86,17 +90,3 @@ val preferences =
     .setPreference( SpacesWithinPatternBinders,                   false )
 
 SbtScalariform.scalariformSettings ++ Seq(preferences)
-
-libraryDependencies ++= Seq("org.scalactic" %% "scalactic" % "3.0.3",
- "org.scalatest" %% "scalatest" % "3.0.3" % "test",
-"org.mockito" % "mockito-core" % "2.8.47" )
-
-// Publishing
-publishTo := {
-  val nexus = "https://testing.datascience.ch:18081/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "repository/maven-snapshots/")
-  else
-    None //TODO
-}
-credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
