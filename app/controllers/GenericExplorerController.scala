@@ -112,7 +112,11 @@ class GenericExplorerController @Inject() (
       else
         Future.successful( List() )
     }
-    future.map( s => Ok( Json.toJson( s ) ) )
+    future.map {
+      case x :: xs => Ok( Json.toJson( x :: xs ) )
+      case _       => NotFound
+
+    }
   }
 
   //Search for nodes with a property in a graph
@@ -131,7 +135,11 @@ class GenericExplorerController @Inject() (
       else
         Future.successful( List() )
     }
-    future.map( i => Ok( Json.toJson( i ) ) )
+    future.map {
+      case x :: xs => Ok( Json.toJson( x :: xs ) )
+      case _       => NotFound
+
+    }
   }
 
   def getValuesForProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>

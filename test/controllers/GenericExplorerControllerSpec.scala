@@ -127,19 +127,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       content_ids.toSet mustBe t_ids.toSet
     }
   }
-
-  "The edge retrieval of a node controller" should {
-    "return an empty list if the node with id does not exist" in {
-
-      val nodeId = 4
-      val result = genericController.retrieveNodeEdges( nodeId.toString.toLong ).apply( fakerequest )
-      val content = contentAsJson( result ).as[List[PersistedEdge]]
-
-      content mustBe List.empty
-
-    }
-  }
-
+  /*
   "The edge retrieval of a node controller" should {
     "return an empty list if the node with id exists but has no edges (somehow)" in {
 
@@ -150,7 +138,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       content mustBe List.empty
     }
-  }
+  }*/
 
   "The property search controller" should {
     "return the nodes of a given property if they exist" in {
@@ -175,18 +163,6 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
       content.length mustBe t.length
-    }
-  }
-
-  "The property search controller" should {
-    "return an empty list" in {
-
-      val prop = "month"
-
-      val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
-      val content = contentAsJson( result ).as[List[PersistedVertex]]
-
-      content.length mustBe 0
     }
   }
 
