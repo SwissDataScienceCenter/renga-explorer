@@ -21,7 +21,7 @@ package controllers
 import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
-import ch.datascience.graph.elements.persisted.PersistedVertex
+import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json._
 import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
@@ -96,6 +96,29 @@ class GenericExplorerController @Inject() (
     future.map( i => Ok( Json.toJson( i ) ) )
   }
 
+  //Get all edges belonging to a node
+  def retrieveNodeEdges( id: Long ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to ingoing and outgoing edges of node with id " + id )
+    val g = graphTraversalSource
+    val t = g.V( Long.box( id ) ).bothE()
+
+    val future: Future[List[PersistedEdge]] = {
+
+      if ( t.hasNext ) {
+        Future.sequence(
+          for ( edge <- t.asScala.toList ) yield edgeReader.read( edge )
+        )
+      }
+      else
+        Future.successful( List() )
+    }
+    future.map {
+      case x :: xs => Ok( Json.toJson( x :: xs ) )
+      case _       => NotFound
+
+    }
+  }
+
   //Search for nodes with a property in a graph
   def retrieveNodesWithProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve node(s) with property " + property )
@@ -112,7 +135,11 @@ class GenericExplorerController @Inject() (
       else
         Future.successful( List() )
     }
-    future.map( i => Ok( Json.toJson( i ) ) )
+    future.map {
+      case x :: xs => Ok( Json.toJson( x :: xs ) )
+      case _       => NotFound
+
+    }
   }
 
   def getValuesForProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>

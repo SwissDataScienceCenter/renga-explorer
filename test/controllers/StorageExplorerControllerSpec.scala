@@ -157,6 +157,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 */
+
   "The file exploration controller" should {
     "return all files in a bucket" in {
       // file location not bucket -> find bucket connected to file location
