@@ -46,6 +46,10 @@ libraryDependencies += "org.janusgraph" % "janusgraph-cassandra" % janusgraph_ve
 
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % Test
 
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.3" % Test
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.3" % Test
+libraryDependencies += "org.mockito" % "mockito-core" % "2.8.47" % Test
+
 
 import com.typesafe.sbt.packager.docker._
 dockerBaseImage := "openjdk:8-jre-alpine"
@@ -86,17 +90,3 @@ val preferences =
     .setPreference( SpacesWithinPatternBinders,                   false )
 
 SbtScalariform.scalariformSettings ++ Seq(preferences)
-
-libraryDependencies ++= Seq("org.scalactic" %% "scalactic" % "3.0.3",
- "org.scalatest" %% "scalatest" % "3.0.3" % "test",
-"org.mockito" % "mockito-core" % "2.8.47" )
-
-// Publishing
-publishTo := {
-  val nexus = "https://testing.datascience.ch:18081/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "repository/maven-snapshots/")
-  else
-    None //TODO
-}
-credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
