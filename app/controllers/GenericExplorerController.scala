@@ -181,8 +181,11 @@ class GenericExplorerController @Inject() (
       }
       else Future.successful( List() ) // No values exist for this property
 
-    future.map( i => Ok( Json.toJson( i ) ) )
+    future.map {
+      case x :: xs => Ok( Json.toJson( x :: xs ) )
+      case _       => NotFound
 
+    }
   }
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
