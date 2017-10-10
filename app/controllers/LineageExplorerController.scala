@@ -74,7 +74,7 @@ class LineageExplorerController @Inject() (
 
     }
 
-    Future.traverse( seq ) {
+    Future.traverse( seq.toSet ) {
       case ( edge, vertex ) =>
         for {
           e <- edgeReader.read( edge )
@@ -102,7 +102,7 @@ class LineageExplorerController @Inject() (
 
     }
 
-    Future.traverse( seq ) {
+    Future.traverse( seq.toSet ) {
       case ( edge, vertex ) =>
         for {
           e <- edgeReader.read( edge )

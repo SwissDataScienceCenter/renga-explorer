@@ -39,6 +39,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, Reads }
 import play.api.test.FakeRequest
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
+import org.apache.tinkerpop.gremlin.structure.{ Edge, Vertex }
 import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
@@ -81,12 +82,12 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
 
-      val s = c.flatMap( ensureList )
+      val s = c.flatMap( ensureList ).toSet
 
       val result = lineageController.lineageFromContext( deployerid.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
-      content.length mustBe s.length
+      content.length mustBe s.toList.length
 
     }
   }
@@ -107,12 +108,12 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val nodes = g.V( fileId ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" ).asScala.toList
 
       val t = ( for ( x <- nodes ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
-      val s = t.flatMap( ensureList )
+      val s = t.flatMap( ensureList ).toSet
 
       val result = lineageController.lineageFromFile( fileId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
-      content.length mustBe s.length
+      content.length mustBe s.toList.length
     }
   }
 
