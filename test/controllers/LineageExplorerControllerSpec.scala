@@ -137,8 +137,8 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val t = g.V( projectId ).repeat( __.bothE( "deployer:launch", "project:is_part_of" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
       val result = lineageController.retrieveProjectLineage( projectId.toString.toLong ).apply( fakerequest )
-      val content = contentAsJson( result )
-      // TODO fix test
+      val content = contentAsJson( result ).as[List[JsObject]]
+      content.isEmpty mustBe false
     }
   }
 }
