@@ -93,7 +93,11 @@ class GenericExplorerController @Inject() (
       else
         Future.successful( None )
     }
-    future.map( i => Ok( Json.toJson( i ) ) )
+    future.map {
+      case Some( vertex ) =>
+        Ok( Json.toJson( vertex )( PersistedVertexFormat ) )
+      case None => NotFound
+    }
   }
 
   //Get all edges belonging to a node
@@ -115,7 +119,6 @@ class GenericExplorerController @Inject() (
     future.map {
       case x :: xs => Ok( Json.toJson( x :: xs ) )
       case _       => NotFound
-
     }
   }
 
@@ -131,14 +134,12 @@ class GenericExplorerController @Inject() (
           for ( vertex <- t.asScala.toList ) yield vertexReader.read( vertex )
         )
       }
-
       else
         Future.successful( List() )
     }
     future.map {
       case x :: xs => Ok( Json.toJson( x :: xs ) )
       case _       => NotFound
-
     }
   }
 
@@ -175,14 +176,15 @@ class GenericExplorerController @Inject() (
             for ( vertex <- t.asScala.toList ) yield vertexReader.read( vertex )
           )
         }
-
         else
           Future.successful( List() ) // No nodes with the value exist
       }
       else Future.successful( List() ) // No values exist for this property
 
-    future.map( i => Ok( Json.toJson( i ) ) )
-
+    future.map {
+      case x :: xs => Ok( Json.toJson( x :: xs ) )
+      case _       => NotFound
+    }
   }
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
