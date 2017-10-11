@@ -142,21 +142,30 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
-  /*"The bucket metadata exploration controller" should {
-    "return nothing if the node is not a bucket" in {
-      val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
-      val t = g.V( fileId ).has( Constants.TypeKey, "resource:bucket" ).next()
+  "The bucket metadata exploration controller" should {
+    "return 404 NotFound if the node is not a bucket" in {
+      val result = explorerController.bucketMetadata( "32".toLong ).apply( fakerequest )
 
-      println( "Wrong bucket test: ", fileId, g.V( fileId ).valueMap() )
-      println( "graphresult: " + t )
+      val resultStatus = result.map( x => x.header.status )
 
-      val result = explorerController.bucketMetadata( fileId.toString.toLong ).apply( fakerequest )
-      val content = result.value
-
-      content.toString mustBe "None"
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
     }
   }
-*/
+
+  "The bucket metadata exploration controller" should {
+    "return a 404 NotFound if the bucket does not exist" in {
+
+      val result = explorerController.bucketMetadata( "32".toString.toLong ).apply( fakerequest )
+
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
 
   "The file exploration controller" should {
     "return all files in a bucket" in {
