@@ -28,6 +28,7 @@ import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
+import org.apache.tinkerpop.gremlin.process.traversal.P
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -95,6 +96,22 @@ class ProjectExplorerController @Inject() (
     }
     future.map( s => Ok( Json.toJson( s ) ) )
 
+  }
+
+  // Files and deployer executions are also directly linked to the project.
+  def retrieveBucketsContextsFromProject( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve project buckets and deployer contexts for project with id " + id )
+    val g = graphTraversalSource
+    val t = g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, P.within( "resource:bucket", "deployer:context" ) )
+
+    val future: Future[List[PersistedVertex]] = graphExecutionContext.execute {
+      Future.sequence( t.toIterable.map( v =>
+        vertexReader.read( v ) ).toList )
+    }
+    future.map {
+      case x :: xs => Ok( Json.toJson( x :: xs ) )
+      case _       => NotFound
+    }
   }
 
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat

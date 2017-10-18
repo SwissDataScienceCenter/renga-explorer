@@ -113,7 +113,7 @@ class LineageExplorerController @Inject() (
   }
 
   def retrieveProjectLineage( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve project lineave for project node with id " + id )
+    Logger.debug( "Request to retrieve project lineage for project node with id " + id )
 
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "project:is_part_of" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
