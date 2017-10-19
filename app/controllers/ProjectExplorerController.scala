@@ -28,7 +28,8 @@ import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
-import org.apache.tinkerpop.gremlin.process.traversal.P
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal
+import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -98,19 +99,46 @@ class ProjectExplorerController @Inject() (
 
   }
 
-  // Files and deployer executions are also directly linked to the project.
-  def retrieveBucketsContextsFromProject( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve project buckets and deployer contexts for project with id " + id )
+  // Retrieve resources linked to project, if no resource specified all nodes are given with the is_part_of edge towards the project
+  def retrieveProjectResources( id: Long, resource: Option[String] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    Logger.debug( "Request to retrieve resource " + resource.getOrElse( "all" ) + "for project with id " + id )
+
+    val availableResources = Set( "file", "bucket", "context", "execution" )
+
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, P.within( "resource:bucket", "deployer:context" ) )
+
+    val t: GraphTraversal[Vertex, Vertex] = resource match {
+      case None => {
+        Logger.debug( "Requested all resources" )
+        g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV()
+      }
+      case Some( x ) =>
+        if ( availableResources.contains( x ) ) {
+          Logger.debug( "Requested resource " + x )
+          g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, stringToKey( x ) )
+
+        }
+        else throw new UnsupportedOperationException( "Type not supported" )
+    }
 
     val future: Future[List[PersistedVertex]] = graphExecutionContext.execute {
       Future.sequence( t.toIterable.map( v =>
         vertexReader.read( v ) ).toList )
     }
+
     future.map {
       case x :: xs => Ok( Json.toJson( x :: xs ) )
       case _       => NotFound
+    }
+  }
+
+  def stringToKey( resource: String ): String = {
+    resource.toLowerCase match {
+      case "file"      => "resource:file"
+      case "bucket"    => "resource:bucket"
+      case "context"   => "deployer:context"
+      case "execution" => "deployer:execution"
+      case _           => throw new UnsupportedOperationException( "Type not supported" )
     }
   }
 

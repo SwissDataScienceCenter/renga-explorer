@@ -400,16 +400,22 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/{projectNodeId}/files:
+  /projects/{projectNodeId}/resources:
     get:
       tags:
          - 'Explorer-Projects'
-      summary: 'Get project files'
-      description:  'Get buckets and deployer contexts from project with projectNodeId'
+      summary: 'Get project resources'
+      description:  'Get resource from project with projectNodeId. Resource should be a type that is present in the graph, like bucket, file, execution or context'
       parameters:
       - name: projectNodeId
         in: path
         description: 'Project node id'
+        required: true
+        type: string
+      parameters:
+      - name: resources
+        in: query
+        description: 'Type of resource requested'
         required: true
         type: string
       responses:

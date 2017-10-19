@@ -30,7 +30,6 @@ import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
 import helpers.ImportJSONGraph
-import org.apache.tinkerpop.gremlin.process.traversal.P
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -120,41 +119,55 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
-  "The project buckets and execution context query" should {
-    "return all buckets and contexts in a project" in {
+  "The project resources query" should {
+    "return all buckets in a project if resource=bucket" in {
       val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
-      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, P.within( "resource:bucket", "deployer:context" ) ).asScala.toList
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, "resource:bucket" ).asScala.toList
 
-      val result = projectController.retrieveBucketsContextsFromProject( projectId.toString.toLong ).apply( fakerequest )
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, Some( "bucket" ) ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
       content.length mustBe t.length
     }
   }
 
-  "The project buckets and execution context query" should {
-    "return no files in a project" in {
+  "The project resources query" should {
+    "return all files attached to a project if resource=None" in {
       val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().asScala.toList
 
-      val result = projectController.retrieveBucketsContextsFromProject( projectId.toString.toLong ).apply( fakerequest )
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, None ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[PersistedVertex]]
 
-      val values = for ( vertex <- content ) yield vertex.properties.get( NamespaceAndName( "resource", "file_name" ) )
-
-      values.toSet mustBe Set( None )
+      content.length mustBe t.length
     }
   }
 
-  "The project buckets and execution context query" should {
-    "return a 404 if the project has no buckets or contexts associated with it" in {
+  "The project resources query" should {
+    "return a 404 if an incorrect project id is given" in {
       val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id()
 
-      val result = projectController.retrieveBucketsContextsFromProject( fileId.toString.toLong ).apply( fakerequest )
+      val result = projectController.retrieveProjectResources( fileId.toString.toLong, None ).apply( fakerequest )
       val resultStatus = result.map( x => x.header.status )
 
       for ( status <- resultStatus ) {
         status.toString mustBe "404"
       }
+    }
+  }
+
+  "The project resources query" should {
+    "throw an error if a non-supported resource is requested" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().asScala.toList
+
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, Some( "coffee" ) ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+
     }
   }
 
