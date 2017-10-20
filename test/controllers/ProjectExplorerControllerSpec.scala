@@ -132,7 +132,7 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The project resources query" should {
-    "return all files attached to a project if resource=None" in {
+    "return all nodes attached to a project if resource=None" in {
       val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
       val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().asScala.toList
 
