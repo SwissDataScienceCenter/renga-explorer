@@ -10,7 +10,7 @@ GET      /storage/bucket                          controllers.StorageExplorerCon
 GET      /storage/file/:id                        controllers.StorageExplorerController.fileMetadata(id: Long)
 GET      /storage/bucket/:id/files                controllers.StorageExplorerController.fileList(id: Long)
 GET      /storage/bucket/:id                      controllers.StorageExplorerController.bucketMetadata(id: Long)
-GET      /storage/bucket/:id/files/*path          controllers.StorageExplorerController.fileMetadatafromPath(id: Long, path: String)
+GET      /storage/bucket/:id/files/:path          controllers.StorageExplorerController.fileMetadatafromPath(id: Long, path: String)
 GET      /storage/file/:id/versions               controllers.StorageExplorerController.retrievefileVersions( id: Long )
 GET      /storage/file/timestamps/:date1/:date2   controllers.StorageExplorerController.retrieveFilesDate( date1: Long, date2: Long )
 GET      /storage                                 controllers.StorageExplorerController.retrieveByUserName(userId: String)
@@ -29,3 +29,4 @@ GET      /lineage/project/:id/                    controllers.LineageExplorerCon
 GET      /projects                                controllers.ProjectExplorerController.retrieveProjects
 GET      /projects/user                           controllers.ProjectExplorerController.retrieveProjectByUserName(userId: Option[String] )
 GET      /projects/:id                            controllers.ProjectExplorerController.retrieveProjectMetadata( id: Long )
+GET      /projects/:id/resources                  controllers.ProjectExplorerController.retrieveProjectResources( id: Long, resource: Option[String] )

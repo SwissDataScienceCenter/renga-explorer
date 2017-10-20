@@ -400,6 +400,30 @@ paths:
       security:
       - token_auth:
         - 'profile'
+  /projects/{projectNodeId}/resources:
+    get:
+      tags:
+         - 'Explorer-Projects'
+      summary: 'Get project resources'
+      description:  'Get resource from project with projectNodeId. Resource should be a type that is present in the graph, like bucket, file, execution or context'
+      parameters:
+      - name: projectNodeId
+        in: path
+        description: 'Project node id'
+        required: true
+        type: string
+      parameters:
+      - name: resources
+        in: query
+        description: 'Type of resource requested'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
 securityDefinitions:
   token_auth:
     type: "oauth2"
