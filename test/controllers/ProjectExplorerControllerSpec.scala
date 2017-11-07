@@ -118,4 +118,57 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       graphProjectOwner mustBe contentProjectOwner
     }
   }
+
+  "The project resources query" should {
+    "return all buckets in a project if resource=bucket" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, "resource:bucket" ).asScala.toList
+
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, Some( "bucket" ) ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+    }
+  }
+
+  "The project resources query" should {
+    "return all nodes attached to a project if resource=None" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().asScala.toList
+
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, None ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+    }
+  }
+
+  "The project resources query" should {
+    "return a 404 if an incorrect project id is given" in {
+      val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id()
+
+      val result = projectController.retrieveProjectResources( fileId.toString.toLong, None ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The project resources query" should {
+    "throw an error if a non-supported resource is requested" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().asScala.toList
+
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, Some( "coffee" ) ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+
+    }
+  }
+
 }
