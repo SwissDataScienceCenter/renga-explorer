@@ -34,7 +34,7 @@ lazy val renga_version = "0.1.1-SNAPSHOT"
 libraryDependencies += "ch.datascience" %% "renga-graph-core" % renga_version
 libraryDependencies += "ch.datascience" %% "renga-commons" % renga_version exclude("org.slf4j", "slf4j-log4j12") exclude("org.slf4j", "slf4j-nop")
 
-lazy val janusgraph_version = "0.1.0"
+lazy val janusgraph_version = "0.2.0"
 
 libraryDependencies += filters
 libraryDependencies += "org.janusgraph" % "janusgraph-cassandra" % janusgraph_version //% Runtime
