@@ -29,7 +29,7 @@ import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
-import org.apache.tinkerpop.gremlin.process.traversal.P
+import org.apache.tinkerpop.gremlin.process.traversal.{ Order, P }
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
@@ -173,7 +173,7 @@ class StorageExplorerController @Inject() (
   def retrievefileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Request to retrieve all file versions from file with id" + id )
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).outV()
+    val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).outV().order().by( "system:creation_time", Order.decr )
 
     val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
       Future.sequence( t.toIterable.map( v =>
