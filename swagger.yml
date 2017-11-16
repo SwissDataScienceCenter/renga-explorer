@@ -412,7 +412,6 @@ paths:
         description: 'Project node id'
         required: true
         type: string
-      parameters:
       - name: resources
         in: query
         description: 'Type of resource requested'
