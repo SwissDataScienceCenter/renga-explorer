@@ -61,6 +61,8 @@ class StorageExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
+  lazy val logger: Logger = Logger( "application.StorageExplorerController" )
+
   def retrieveFilesDate( date1: Long, date2: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
 
     Logger.debug( "Requests to retrieve all files between " + date1 + " and " + date2 )

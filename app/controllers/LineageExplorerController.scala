@@ -56,6 +56,8 @@ class LineageExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
+  lazy val logger: Logger = Logger( "application.LineageExplorerController" )
+
   def lineageFromContext( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     Logger.debug( "Find Lineage from deployer with node with id " + id )
 

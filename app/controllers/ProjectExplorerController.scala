@@ -56,6 +56,8 @@ class ProjectExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
+  lazy val logger: Logger = Logger( "application.ProjectExplorerController" )
+
   def retrieveProjectByUserName( userId: Option[String] ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val user = userId.getOrElse( request.userId )
 

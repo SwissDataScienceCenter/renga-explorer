@@ -56,6 +56,8 @@ class GenericExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
+  lazy val logger: Logger = Logger( "application.GenericExplorerController" )
+
   def retrieveGraphSubset: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     // unless otherwise specified, the number of nodes are limited
     val n = 10
