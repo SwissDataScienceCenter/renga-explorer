@@ -62,7 +62,7 @@ class ProjectExplorerController @Inject() (
     val user = userId.getOrElse( request.userId )
 
     val n = 100
-    Logger.debug( "Request to retrieve at most " + n + " project nodes for user " + user )
+    logger.debug( "Request to retrieve at most " + n + " project nodes for user " + user )
     val g = graphTraversalSource
     val t = g.V().has( "resource:owner", user ).has( Constants.TypeKey, "project:project" ).limit( n )
 
@@ -76,7 +76,7 @@ class ProjectExplorerController @Inject() (
 
   def retrieveProjects = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val n = 100
-    Logger.debug( "Request to retrieve at most " + n + " project nodes  " )
+    logger.debug( "Request to retrieve at most " + n + " project nodes  " )
     val g = graphTraversalSource
     val t = g.V().has( Constants.TypeKey, "project:project" ).limit( n )
 
@@ -89,7 +89,7 @@ class ProjectExplorerController @Inject() (
   }
 
   def retrieveProjectMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve project metadata for project node with id " + id )
+    logger.debug( "Request to retrieve project metadata for project node with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
 
@@ -103,7 +103,7 @@ class ProjectExplorerController @Inject() (
 
   // Retrieve resources linked to project, if no resource specified all nodes are given with the is_part_of edge towards the project
   def retrieveProjectResources( id: Long, resource: Option[String] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve resource " + resource.getOrElse( "all" ) + "for project with id " + id )
+    logger.debug( "Request to retrieve resource " + resource.getOrElse( "all" ) + "for project with id " + id )
 
     val availableResources = Set( "file", "bucket", "context", "execution" )
 
@@ -111,12 +111,12 @@ class ProjectExplorerController @Inject() (
 
     val t: GraphTraversal[Vertex, Vertex] = resource match {
       case None => {
-        Logger.debug( "Requested all resources" )
+        logger.debug( "Requested all resources" )
         g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV()
       }
       case Some( x ) =>
         if ( availableResources.contains( x ) ) {
-          Logger.debug( "Requested resource " + x )
+          logger.debug( "Requested resource " + x )
           g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, stringToKey( x ) )
 
         }

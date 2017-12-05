@@ -59,7 +59,7 @@ class LineageExplorerController @Inject() (
   lazy val logger: Logger = Logger( "application.LineageExplorerController" )
 
   def lineageFromContext( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Find Lineage from deployer with node with id " + id )
+    logger.debug( "Find Lineage from deployer with node with id " + id )
 
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
@@ -88,7 +88,7 @@ class LineageExplorerController @Inject() (
   }
 
   def lineageFromFile( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Find Lineage from filenode with id " + id )
+    logger.debug( "Find Lineage from filenode with id " + id )
 
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
@@ -115,7 +115,7 @@ class LineageExplorerController @Inject() (
   }
 
   def retrieveProjectLineage( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve project lineage for project node with id " + id )
+    logger.debug( "Request to retrieve project lineage for project node with id " + id )
 
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "project:is_part_of", "project:used_by" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
