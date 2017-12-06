@@ -56,10 +56,12 @@ class GenericExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
+  lazy val logger: Logger = Logger( "application.GenericExplorerController" )
+
   def retrieveGraphSubset: Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     // unless otherwise specified, the number of nodes are limited
     val n = 10
-    Logger.debug( "Request to retrieve a graphsubset of " + n + " nodes" )
+    logger.debug( "Request to retrieve a graphsubset of " + n + " nodes" )
     val g = graphTraversalSource
     val t = g.V().as( "node1" ).outE().as( "edge" ).inV().as( "node2" ).select[java.lang.Object]( "node1", "edge", "node2" ).limit( n )
 
@@ -81,7 +83,7 @@ class GenericExplorerController @Inject() (
   }
 
   def retrieveNodeMetaData( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve data of node with id " + id )
+    logger.debug( "Request to retrieve data of node with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) )
 
@@ -102,7 +104,7 @@ class GenericExplorerController @Inject() (
 
   //Get all edges belonging to a node
   def retrieveNodeEdges( id: Long ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to ingoing and outgoing edges of node with id " + id )
+    logger.debug( "Request to ingoing and outgoing edges of node with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).bothE()
 
@@ -124,7 +126,7 @@ class GenericExplorerController @Inject() (
 
   //Search for nodes with a property in a graph
   def retrieveNodesWithProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve node(s) with property " + property )
+    logger.debug( "Request to retrieve node(s) with property " + property )
     val g = graphTraversalSource
     val t = g.V().has( property )
 
@@ -145,7 +147,7 @@ class GenericExplorerController @Inject() (
 
   def getValuesForProperty( property: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
 
-    Logger.debug( "Request to retrieve values for property " + property )
+    logger.debug( "Request to retrieve values for property " + property )
 
     val g = graphTraversalSource
     val t = g.V().values[java.lang.Object]( property )
@@ -161,7 +163,7 @@ class GenericExplorerController @Inject() (
 
   //Search for nodes with a property and value in a graph
   def retrieveNodePropertyAndValue( property: String, value: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve node(s) with property " + property + " and value " + value )
+    logger.debug( "Request to retrieve node(s) with property " + property + " and value " + value )
 
     val g = graphTraversalSource
     val valueClass = g.V().values[java.lang.Object]( property ).asScala.toList
