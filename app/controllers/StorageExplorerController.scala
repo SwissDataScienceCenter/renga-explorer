@@ -92,16 +92,24 @@ class StorageExplorerController @Inject() (
 
   def fileList( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve all files in bucket with id " + id )
+
+    // Check if bucket exists, to distinguish between an existing bucket without files and a node not existing or not being a bucket
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
+    val check_bucket = g.V( Long.box( id ) ).has( "type", "resource:bucket" )
 
-    val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
-      Future.sequence( t.toIterable.map( v =>
-        vertexReader.read( v ) ).toSeq )
+    if ( check_bucket.isEmpty == true )
+      Future( NotFound )
+    else {
+      val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
+
+      val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
+        //empty list if no files, 404 if bucket not exists
+        Future.sequence( t.toIterable.map( v =>
+          vertexReader.read( v ) ).toSeq )
+      }
+      future.map( s => Ok( Json.toJson( s ) ) )
     }
-    future.map( s => Ok( Json.toJson( s ) ) )
   }
-
   /**
    * Here the id is the bucket id and the path the filename
    */
@@ -122,8 +130,12 @@ class StorageExplorerController @Inject() (
       }
       else
         Seq.empty
-    } ).map( i => Ok( Json.toJson( i.toMap ) ) )
+    } ).map( a => a.toList match {
+      case x :: xs => Ok( Json.toJson( ( x :: xs ).toMap ) )
+      case _       => NotFound
+    } )
   }
+  //TODO
 
   /*
   Returns [Map[String, PersistedVertex]] with keys = "data", "bucket"
@@ -147,7 +159,7 @@ class StorageExplorerController @Inject() (
         Seq.empty
     } ).map( i => Ok( Json.toJson( i.toMap ) ) )
   }
-
+  //TODO
   def bucketMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve bucket metadata from bucket with " + id )
     val g = graphTraversalSource
@@ -171,7 +183,7 @@ class StorageExplorerController @Inject() (
       case None => NotFound
     }
   }
-
+  //TODO
   def retrievefileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve all file versions from file with id" + id )
     val g = graphTraversalSource
