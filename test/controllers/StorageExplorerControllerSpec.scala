@@ -201,6 +201,20 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  "The file exploration controller" should {
+    "should return 404 if the bucket does not exist" in {
+
+      val bucketId = 4
+
+      val result = explorerController.fileList( bucketId ).apply( fakerequest )
+
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
   "The file version exploration controller" should {
     "return all versions of a file " in {
 
@@ -280,6 +294,31 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  "The file meta data from path exploration controller" should {
+    "should return 404 NotFound if the filepath does not exist " in {
+
+      val bucketId = g.V().out( "resource:has_location" ).out( "resource:stored_in" ).asScala.toList.head
+      val result = explorerController.fileMetadatafromPath( bucketId.id.toString.toLong, "fake_path" ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The file meta data from path exploration controller" should {
+    "should return 404 NotFound if the bucket does not exist " in {
+
+      val graphFile = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList.head
+      val path = graphFile.values[String]( "resource:file_name" ).asScala.toList.head
+
+      val result = explorerController.fileMetadatafromPath( "3".toString.toLong, path ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
   "The date search controller " should {
     "return all nodes with a specific timestamp" in {
       val graphFile = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList
