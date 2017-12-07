@@ -97,7 +97,7 @@ class StorageExplorerController @Inject() (
     val g = graphTraversalSource
     val check_bucket = g.V( Long.box( id ) ).has( "type", "resource:bucket" )
 
-    if ( check_bucket.isEmpty == true )
+    if ( check_bucket.isEmpty )
       Future( NotFound )
     else {
       val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
