@@ -21,6 +21,7 @@ package controllers
 import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
+import ch.datascience.graph.Constants
 import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json.{ PersistedEdgeFormat, PersistedVertexFormat }
 import ch.datascience.service.security.ProfileFilterAction
@@ -37,6 +38,7 @@ import play.api.Logger
 import play.api.mvc._
 
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
 /**
@@ -59,87 +61,110 @@ class LineageExplorerController @Inject() (
   lazy val logger: Logger = Logger( "application.LineageExplorerController" )
 
   def lineageFromContext( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Find Lineage from deployer with node with id " + id )
+    logger.debug( "Request to retrieve lineage from deployer with node with id " + id )
 
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
+    val check_context = g.V( Long.box( id ) ).has( Constants.TypeKey, "deployer:context" )
 
-    val seq = graphExecutionContext.execute {
-
-      for {
-        entry <- t.asScala.toList
-        s = entry.asScala.toMap
-        edges = ensureList[Edge]( s( "edge" ) )
-        vertices = ensureList[Vertex]( s( "node" ) )
-        ( edge, vertex ) <- edges zip vertices
-      } yield ( edge, vertex )
-
+    if ( check_context.isEmpty ) {
+      logger.debug( "Node with id " + id + " is not a context or does not exist, returning NotFound" )
+      Future( NotFound )
     }
+    else {
+      logger.debug( "Returning lineage for node with id " + id )
+      val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
-    Future.traverse( seq.toSet ) {
-      case ( edge, vertex ) =>
+      val seq = graphExecutionContext.execute {
+
         for {
-          e <- edgeReader.read( edge )
-          v <- vertexReader.read( vertex )
+          entry <- t.asScala.toList
+          s = entry.asScala.toMap
+          edges = ensureList[Edge]( s( "edge" ) )
+          vertices = ensureList[Vertex]( s( "node" ) )
+          ( edge, vertex ) <- edges zip vertices
+        } yield ( edge, vertex )
+      }
 
-        } yield ( e, v )
-    }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
-
+      Future.traverse( seq.toSet ) {
+        case ( edge, vertex ) =>
+          for {
+            e <- edgeReader.read( edge )
+            v <- vertexReader.read( vertex )
+          } yield ( e, v )
+      }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
+    }
   }
   def lineageFromFile( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Find Lineage from filenode with id " + id )
+    logger.debug( "Request to retrieve lineage from filenode with id " + id )
 
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
-    val seq = graphExecutionContext.execute {
+    val check_file = g.V( Long.box( id ) ).has( Constants.TypeKey, "resource:file" )
 
-      for {
-        entry <- t.asScala.toList
-        s = entry.asScala.toMap
-        edges = ensureList[Edge]( s( "edge" ) )
-        vertices = ensureList[Vertex]( s( "node" ) )
-        ( edge, vertex ) <- edges zip vertices
-      } yield ( edge, vertex )
-
+    if ( check_file.isEmpty ) {
+      logger.debug( "Node with id " + id + " is not a file or does not exist, returning NotFound" )
+      Future( NotFound )
     }
+    else {
+      logger.debug( "Returning lineage for file with id " + id )
+      val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+      val seq = graphExecutionContext.execute {
 
-    Future.traverse( seq.toSet ) {
-      case ( edge, vertex ) =>
         for {
-          e <- edgeReader.read( edge )
-          v <- vertexReader.read( vertex )
+          entry <- t.asScala.toList
+          s = entry.asScala.toMap
+          edges = ensureList[Edge]( s( "edge" ) )
+          vertices = ensureList[Vertex]( s( "node" ) )
+          ( edge, vertex ) <- edges zip vertices
+        } yield ( edge, vertex )
 
-        } yield ( e, v )
-    }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
+      }
+
+      Future.traverse( seq.toSet ) {
+        case ( edge, vertex ) =>
+          for {
+            e <- edgeReader.read( edge )
+            v <- vertexReader.read( vertex )
+
+          } yield ( e, v )
+      }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
+    }
   }
-
   def retrieveProjectLineage( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve project lineage for project node with id " + id )
 
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "project:is_part_of", "project:used_by" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+    val check_project = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
 
-    val seq = graphExecutionContext.execute {
-
-      for {
-        entry <- t.asScala.toList
-        s = entry.asScala.toMap
-        edges = ensureList[Edge]( s( "edge" ) )
-        vertices = ensureList[Vertex]( s( "node" ) )
-        ( edge, vertex ) <- edges zip vertices
-      } yield ( edge, vertex )
-
+    if ( check_project.isEmpty ) {
+      logger.debug( "Node with id " + id + " is not a project or does not exist, returning NotFound" )
+      Future( NotFound )
     }
+    else {
+      logger.debug( "Returning lineage for project with id " + id )
+      val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "project:is_part_of", "project:used_by" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
-    Future.traverse( seq.toSet ) {
-      case ( edge, vertex ) =>
+      val seq = graphExecutionContext.execute {
+
         for {
-          e <- edgeReader.read( edge )
-          v <- vertexReader.read( vertex )
+          entry <- t.asScala.toList
+          s = entry.asScala.toMap
+          edges = ensureList[Edge]( s( "edge" ) )
+          vertices = ensureList[Vertex]( s( "node" ) )
+          ( edge, vertex ) <- edges zip vertices
+        } yield ( edge, vertex )
 
-        } yield ( e, v )
-    }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
+      }
+
+      Future.traverse( seq.toSet ) {
+        case ( edge, vertex ) =>
+          for {
+            e <- edgeReader.read( edge )
+            v <- vertexReader.read( vertex )
+
+          } yield ( e, v )
+      }.map( _.map { tuple: ( PersistedEdge, PersistedVertex ) => Map( "edge" -> Json.toJson( tuple._1 ), "vertex" -> Json.toJson( tuple._2 ) ) } ).map( s => Ok( Json.toJson( s ) ) )
+    }
   }
 
   private[this] implicit lazy val persistedVertexFormat: Format[PersistedVertex] = PersistedVertexFormat
