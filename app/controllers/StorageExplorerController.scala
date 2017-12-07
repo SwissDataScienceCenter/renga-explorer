@@ -97,9 +97,13 @@ class StorageExplorerController @Inject() (
     val g = graphTraversalSource
     val check_bucket = g.V( Long.box( id ) ).has( "type", "resource:bucket" )
 
-    if ( check_bucket.isEmpty )
+    if ( check_bucket.isEmpty ) {
+      logger.debug( "Node with id " + id + " is not a bucket, returning NotFound" )
       Future( NotFound )
+    }
+
     else {
+      logger.debug( "Returning file list for bucket with id " + id )
       val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
 
       val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
@@ -110,6 +114,7 @@ class StorageExplorerController @Inject() (
       future.map( s => Ok( Json.toJson( s ) ) )
     }
   }
+
   /**
    * Here the id is the bucket id and the path the filename
    */
@@ -120,6 +125,7 @@ class StorageExplorerController @Inject() (
 
     Future.sequence( graphExecutionContext.execute {
       if ( t.hasNext ) {
+        logger.debug( "Returning meta data for file with path " + path + " and bucket with id " + id )
         import scala.collection.JavaConverters._
         val jmap: Map[String, Vertex] = t.next().asScala.toMap
         for {
@@ -128,18 +134,20 @@ class StorageExplorerController @Inject() (
           vertex <- vertexReader.read( value )
         } yield key -> vertex
       }
-      else
+      else {
+        logger.debug( "No file with path " + path + " or bucket with id " + id + " found" )
         Seq.empty
+      }
     } ).map( a => a.toList match {
       case x :: xs => Ok( Json.toJson( ( x :: xs ).toMap ) )
       case _       => NotFound
     } )
   }
-  //TODO
 
   /*
   Returns [Map[String, PersistedVertex]] with keys = "data", "bucket"
    */
+
   def fileMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve file metadata from file with id " + id )
     val g = graphTraversalSource
@@ -147,6 +155,7 @@ class StorageExplorerController @Inject() (
 
     Future.sequence( graphExecutionContext.execute {
       if ( t.hasNext ) {
+        logger.debug( "Returning metadata for file with id " + id )
         import scala.collection.JavaConverters._
         val jmap: Map[String, Vertex] = t.next().asScala.toMap
         for {
@@ -155,11 +164,18 @@ class StorageExplorerController @Inject() (
           vertex <- vertexReader.read( value )
         } yield key -> vertex
       }
-      else
+      else {
+        // The file not having any meta data option should not exist, since it has at least a label saying it is in fact a file
+        logger.debug( "Node with id " + id + " is not a file or does not exist, returning NotFound" )
         Seq.empty
-    } ).map( i => Ok( Json.toJson( i.toMap ) ) )
+      }
+
+    } ).map( a => a.toList match {
+      case x :: xs => Ok( Json.toJson( ( x :: xs ).toMap ) )
+      case _       => NotFound
+    } )
   }
-  //TODO
+
   def bucketMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve bucket metadata from bucket with " + id )
     val g = graphTraversalSource
@@ -176,25 +192,41 @@ class StorageExplorerController @Inject() (
 
     future.map {
       case Some( vertex ) =>
-        if ( vertex.types.contains( NamespaceAndName( "resource:bucket" ) ) )
+        if ( vertex.types.contains( NamespaceAndName( "resource:bucket" ) ) ) {
+          logger.debug( "Returning metadata for bucket with id " + id )
           Ok( Json.toJson( vertex )( PersistedVertexFormat ) )
-        else
-          NotAcceptable // to differentiate from not found
-      case None => NotFound
+        }
+
+        else {
+          logger.debug( "Node with id" + id + " ??? " )
+          NotAcceptable // It is not possible to get here imo, this might need to be removed
+        }
+
+      case None =>
+        logger.debug( "Node with id " + id + " not found or not a bucket, returning NotFound" )
+        NotFound
     }
   }
-  //TODO
+
   def retrievefileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve all file versions from file with id" + id )
+    logger.debug( "Request to retrieve all file versions from file with id " + id )
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).outV().order().by( "system:creation_time", Order.decr )
+    val check_file = g.V( Long.box( id ) ).has( "type", "resource:file" )
 
-    val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
-      Future.sequence( t.toIterable.map( v =>
-        vertexReader.read( v ) ).toSeq )
+    if ( check_file.isEmpty ) {
+      logger.debug( "Node with id " + id + " is not a file or does not exist, returning NotFound" )
+      Future( NotFound )
     }
-    future.map( s => Ok( Json.toJson( s ) ) )
+    else {
+      logger.debug( "Returning file versions for file with id " + id )
+      val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).outV().order().by( "system:creation_time", Order.decr )
 
+      val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
+        Future.sequence( t.toIterable.map( v =>
+          vertexReader.read( v ) ).toSeq )
+      }
+      future.map( s => Ok( Json.toJson( s ) ) )
+    }
   }
 
   def retrieveByUserName( userId: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>

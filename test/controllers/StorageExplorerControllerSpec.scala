@@ -144,7 +144,9 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   "The bucket metadata exploration controller" should {
     "return 404 NotFound if the node is not a bucket" in {
-      val result = explorerController.bucketMetadata( "32".toLong ).apply( fakerequest )
+      val id = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
+
+      val result = explorerController.bucketMetadata( id.toString.toLong ).apply( fakerequest )
 
       val resultStatus = result.map( x => x.header.status )
 
@@ -157,8 +159,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   "The bucket metadata exploration controller" should {
     "return a 404 NotFound if the bucket does not exist" in {
 
-      val result = explorerController.bucketMetadata( "32".toString.toLong ).apply( fakerequest )
-
+      val result = explorerController.bucketMetadata( "32".toLong ).apply( fakerequest )
       val resultStatus = result.map( x => x.header.status )
 
       for ( status <- resultStatus ) {
@@ -202,11 +203,22 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The file exploration controller" should {
+    "should return 404 if the requested node is not a bucket" in {
+      val id = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList.head.id
+
+      val result = explorerController.fileList( id.toString.toLong ).apply( fakerequest )
+
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The file exploration controller" should {
     "should return 404 if the bucket does not exist" in {
 
-      val bucketId = 4
-
-      val result = explorerController.fileList( bucketId ).apply( fakerequest )
+      val result = explorerController.fileList( "5".toLong ).apply( fakerequest )
 
       val resultStatus = result.map( x => x.header.status )
       for ( status <- resultStatus ) {
@@ -230,6 +242,30 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       content.length mustBe graphVersions.length
       contentTimeStamps.toSet mustBe graphVersionTimeStamps.toSet
+    }
+  }
+
+  "The file version controller" should {
+    "return a NotFound if the requested node does not exist" in {
+
+      val result = explorerController.retrievefileVersions( "3".toLong ).apply( fakerequest )
+
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The file version controller" should {
+    "return a NotFound if the requested node is not a file" in {
+      val id = g.V().has( Constants.TypeKey, "resource:bucket" ).asScala.toList.head.id
+      val result = explorerController.retrievefileVersions( id.toString.toLong ).apply( fakerequest )
+
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
     }
   }
 
@@ -268,6 +304,29 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       graphBucketMetaData( 0 ) mustBe bucketMetaValues( 0 )
       graphBucketMetaData( 1 ) mustBe bucketMetaValues( 1 )
+    }
+  }
+
+  "The file meta data exploration controller" should {
+    "should return 404 NotFound if the node is not a bucket " in {
+
+      val id = g.V().has( Constants.TypeKey, "resource:bucket" ).asScala.toList.head.id
+      val result = explorerController.fileMetadata( id.toString.toLong ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The file meta data exploration controller" should {
+    "should return 404 NotFound if the file does not exist " in {
+
+      val result = explorerController.fileMetadata( "3".toLong ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
     }
   }
 
@@ -312,13 +371,14 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val graphFile = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList.head
       val path = graphFile.values[String]( "resource:file_name" ).asScala.toList.head
 
-      val result = explorerController.fileMetadatafromPath( "3".toString.toLong, path ).apply( fakerequest )
+      val result = explorerController.fileMetadatafromPath( "3".toLong, path ).apply( fakerequest )
       val resultStatus = result.map( x => x.header.status )
       for ( status <- resultStatus ) {
         status.toString mustBe "404"
       }
     }
   }
+
   "The date search controller " should {
     "return all nodes with a specific timestamp" in {
       val graphFile = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList
