@@ -22,7 +22,7 @@ import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.Constants
-import ch.datascience.graph.elements.persisted.PersistedVertex
+import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json.{ PersistedEdgeFormat, PersistedVertexFormat }
 import ch.datascience.graph.naming.NamespaceAndName
 import ch.datascience.service.security.ProfileFilterAction
@@ -32,7 +32,7 @@ import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWit
 import org.apache.tinkerpop.gremlin.process.traversal.{ Order, P }
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.Json
+import play.api.libs.json.{ Format, Json }
 import play.api.libs.ws.WSClient
 import play.api.Logger
 import play.api.mvc._
@@ -95,7 +95,7 @@ class StorageExplorerController @Inject() (
 
     // Check if bucket exists, to distinguish between an existing bucket without files and a node not existing or not being a bucket
     val g = graphTraversalSource
-    val check_bucket = g.V( Long.box( id ) ).has( "type", "resource:bucket" )
+    val check_bucket = g.V( Long.box( id ) ).has( Constants.TypeKey, "resource:bucket" )
 
     if ( check_bucket.isEmpty ) {
       logger.debug( "Node with id " + id + " is not a bucket, returning NotFound" )
@@ -243,6 +243,6 @@ class StorageExplorerController @Inject() (
 
   }
 
-  private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
-  private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
+  private[this] implicit lazy val persistedVertexFormat: Format[PersistedVertex] = PersistedVertexFormat
+  private[this] implicit lazy val persistedEdgeFormat: Format[PersistedEdge] = PersistedEdgeFormat
 }
