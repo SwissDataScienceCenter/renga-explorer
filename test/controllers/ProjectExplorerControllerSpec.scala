@@ -169,7 +169,7 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The project resources query" should {
-    "return a 404 if an incorrect project id is given" in {
+    "return a 404 if an node is not a project" in {
       val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id()
 
       val result = projectController.retrieveProjectResources( fileId.toString.toLong, None ).apply( fakerequest )
