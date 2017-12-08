@@ -205,11 +205,16 @@ class GenericExplorerController @Inject() (
             for ( vertex <- t.asScala.toList ) yield vertexReader.read( vertex )
           )
         }
-        else
-          Future.successful( List() ) // No nodes with the value exist
-      }
-      else Future.successful( List() ) // No values exist for this property
+        else {
+          logger.debug( "No nodes with this value exist" )
+          Future.successful( List() )
+        }
 
+      }
+      else {
+        logger.debug( "No values exist for the property " + property )
+        Future.successful( List() )
+      }
     future.map {
       case x :: xs =>
         logger.debug( "Returning " + ( x :: xs ).length + " nodes with property " + property + " and value " + value )

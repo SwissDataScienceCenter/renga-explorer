@@ -139,8 +139,11 @@ class StorageExplorerController @Inject() (
         Seq.empty
       }
     } ).map( a => a.toList match {
-      case x :: xs => Ok( Json.toJson( ( x :: xs ).toMap ) )
-      case _       => NotFound
+      case x :: xs =>
+        logger.debug( "Returning " + ( x :: xs ).length + " metadata entries" )
+        Ok( Json.toJson( ( x :: xs ).toMap ) )
+      case _ =>
+        NotFound
     } )
   }
 
@@ -171,8 +174,10 @@ class StorageExplorerController @Inject() (
       }
 
     } ).map( a => a.toList match {
-      case x :: xs => Ok( Json.toJson( ( x :: xs ).toMap ) )
-      case _       => NotFound
+      case x :: xs =>
+        logger.debug( "Returning " + ( x :: xs ).length + " metadata entries" )
+        Ok( Json.toJson( ( x :: xs ).toMap ) )
+      case _ => NotFound
     } )
   }
 
