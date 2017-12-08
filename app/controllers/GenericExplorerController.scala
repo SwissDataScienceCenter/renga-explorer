@@ -18,15 +18,16 @@
 
 package controllers
 
-import javax.inject.{ Inject, Singleton }
+import javax.inject.{Inject, Singleton}
 
 import authorization.JWTVerifierProvider
-import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
+import ch.datascience.graph.Constants
+import ch.datascience.graph.elements.persisted.{PersistedEdge, PersistedVertex}
 import ch.datascience.graph.elements.persisted.json._
 import ch.datascience.service.security.ProfileFilterAction
-import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
-import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
-import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
+import ch.datascience.service.utils.persistence.graph.{GraphExecutionContextProvider, JanusGraphTraversalSourceProvider}
+import ch.datascience.service.utils.persistence.reader.{EdgeReader, VertexReader}
+import ch.datascience.service.utils.{ControllerWithBodyParseJson, ControllerWithGraphTraversal}
 import helpers.ObjectMatcher
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import org.apache.tinkerpop.gremlin.structure.Edge
@@ -37,6 +38,7 @@ import play.api.Logger
 import play.api.mvc._
 
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
 /**
@@ -106,6 +108,13 @@ class GenericExplorerController @Inject() (
   def retrieveNodeEdges( id: Long ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to ingoing and outgoing edges of node with id " + id )
     val g = graphTraversalSource
+
+    val check_node = g.V( Long.box( id ) )
+    // Discerning between a node with no edges and a node that does not exist
+    if ( check_node.isEmpty ) {
+      logger.debug( "Node with id " + id + " does not exist, returning NotFound" )
+      Future( NotFound )
+    } else {
     val t = g.V( Long.box( id ) ).bothE()
 
     val future: Future[List[PersistedEdge]] = {
@@ -119,8 +128,14 @@ class GenericExplorerController @Inject() (
         Future.successful( List() )
     }
     future.map {
-      case x :: xs => Ok( Json.toJson( x :: xs ) )
-      case _       => NotFound
+
+      case x :: xs =>
+        logger.debug("Returning edges for node with id "+ id)
+        Ok( Json.toJson( x :: xs ) )
+      case _       =>
+        logger.debug("Node with id " + id + " has no edges")
+        Ok(Json.toJson( List.empty[PersistedEdge]))
+    }
     }
   }
 

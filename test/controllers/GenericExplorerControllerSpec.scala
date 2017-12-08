@@ -135,26 +135,21 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The edge retrieval of a node controller" should {
-    "return a 404 if a node with id exists but has no edges (somehow)" in {
+    "return an empty list if a node with id exists but has no edges (somehow)" in {
 
       val nodeId = g.V().has( "single", "node" ).asScala.toList.head.id
 
       val result = genericController.retrieveNodeEdges( nodeId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedEdge]]
 
-      val resultStatus = result.map( x => x.header.status )
-
-      for ( status <- resultStatus ) {
-        status.toString mustBe "404"
-      }
+      content.length mustBe 0
     }
   }
 
   "The edge retrieval of a node controller" should {
     "return a 404 NotFound if a node does not exist in the graph" in {
 
-      val nodeId = g.V().has( "single", "node" ).asScala.toList.head.id
-
-      val result = genericController.retrieveNodeEdges( nodeId.toString.toLong ).apply( fakerequest )
+      val result = genericController.retrieveNodeEdges( "0".toLong ).apply( fakerequest )
       val resultStatus = result.map( x => x.header.status )
 
       for ( status <- resultStatus ) {
