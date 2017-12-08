@@ -190,11 +190,9 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val prop = "coffee"
 
       val result = genericController.retrieveNodesWithProperty( prop ).apply( fakerequest )
-      val resultStatus = result.map( x => x.header.status )
 
-      for ( status <- resultStatus ) {
-        status.toString mustBe "404"
-      }
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+      content.length mustBe 0
     }
   }
 
@@ -240,14 +238,14 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The value search controller" should {
-    "return an empty list of the property does not exist" in {
+    "return an empty of the property does not exist in the graph" in {
 
       val prop = "coffee"
 
       val result = genericController.getValuesForProperty( prop ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[String]]
-
       content.length mustBe 0
+
     }
   }
 
@@ -269,33 +267,28 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The property value controller " should {
-    "return a 404 if that property is not found" in {
+    "return an empty list if the property or value is not found" in {
 
       val prop = "importance"
       val value = "urgent"
 
       val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
-      val resultStatus = result.map( x => x.header.status )
-
-      for ( status <- resultStatus ) {
-        status.toString mustBe "404"
-      }
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+      content.length mustBe 0
     }
   }
 
   "The property value controller " should {
-    "return a a 404 if a value for that property is not found" in {
+    "return an empty list if a value for that property is not found" in {
       val prop = "coffee"
       val value = "strong"
 
       val result = genericController.retrieveNodePropertyAndValue( prop, value ).apply( fakerequest )
-      val resultStatus = result.map( x => x.header.status )
-
-      for ( status <- resultStatus ) {
-        status.toString mustBe "404"
-      }
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+      content.length mustBe 0
     }
   }
+
   "The property value controller " should {
     "return a proper list if the value is not a string" in {
       val prop = "system:creation_time"
