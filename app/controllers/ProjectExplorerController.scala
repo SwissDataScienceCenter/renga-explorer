@@ -118,10 +118,10 @@ class ProjectExplorerController @Inject() (
 
     else {
       val t: GraphTraversal[Vertex, Vertex] = resource match {
-        case None => {
+        case None =>
           logger.debug( "Requested all resources" )
           g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV()
-        }
+
         case Some( x ) =>
           if ( availableResources.contains( x ) ) {
             logger.debug( "Requested resource " + x )
@@ -140,8 +140,12 @@ class ProjectExplorerController @Inject() (
       }
 
       future.map {
-        case x :: xs => Ok( Json.toJson( x :: xs ) )
-        case _       => NotFound
+        case x :: xs =>
+          logger.debug("Returning requested resouces")
+          Ok( Json.toJson( x :: xs ) )
+        case _       =>
+          logger.debug("No resources found, returning NotFound")
+          NotFound
       }
     }
   }

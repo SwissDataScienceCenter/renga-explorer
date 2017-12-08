@@ -157,10 +157,10 @@ class GenericExplorerController @Inject() (
     }
     future.map {
       case x :: xs =>
-        logger.debug("Returning "  + (x::xs).length +" nodes with property " + property)
+        logger.debug( "Returning " + ( x :: xs ).length + " nodes with property " + property )
         Ok( Json.toJson( x :: xs ) )
-      case _       =>
-        logger.debug("No nodes with property " + property + " found" )
+      case _ =>
+        logger.debug( "No nodes with property " + property + " found" )
         Ok( Json.toJson( List.empty[PersistedVertex] ) )
     }
   }
@@ -180,10 +180,10 @@ class GenericExplorerController @Inject() (
     }
     future.map {
       case x :: xs =>
-        logger.debug("Returning " + (x::xs).length + " values with property " + property)
+        logger.debug( "Returning " + ( x :: xs ).length + " values with property " + property )
         Ok( Json.toJson( x :: xs ) )
-      case _       =>
-        logger.debug("No values for " + property + " found" )
+      case _ =>
+        logger.debug( "No values for " + property + " found" )
         Ok( Json.toJson( List.empty[String] ) )
     }
   }
@@ -212,10 +212,10 @@ class GenericExplorerController @Inject() (
 
     future.map {
       case x :: xs =>
-        logger.debug("Returning " + (x::xs).length + " nodes with property " + property + " and value " + value)
+        logger.debug( "Returning " + ( x :: xs ).length + " nodes with property " + property + " and value " + value )
         Ok( Json.toJson( x :: xs ) )
-      case _       =>
-        logger.debug("No property " + property + " with value " + value +  " found" )
+      case _ =>
+        logger.debug( "No property " + property + " with value " + value + " found" )
         Ok( Json.toJson( List.empty[PersistedVertex] ) )
     }
   }
