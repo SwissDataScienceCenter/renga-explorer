@@ -21,6 +21,7 @@ package controllers
 import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
+import ch.datascience.graph.Constants
 import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json._
 import ch.datascience.service.security.ProfileFilterAction
@@ -37,6 +38,7 @@ import play.api.Logger
 import play.api.mvc._
 
 import scala.collection.JavaConverters._
+import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
 /**
@@ -97,8 +99,11 @@ class GenericExplorerController @Inject() (
     }
     future.map {
       case Some( vertex ) =>
+        logger.debug( "Returning metadata for node with id" + id )
         Ok( Json.toJson( vertex )( PersistedVertexFormat ) )
-      case None => NotFound
+      case None =>
+        logger.debug( "Node with id " + id + " does not exist or does not have any metadata" )
+        NotFound
     }
   }
 
@@ -106,21 +111,32 @@ class GenericExplorerController @Inject() (
   def retrieveNodeEdges( id: Long ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to ingoing and outgoing edges of node with id " + id )
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).bothE()
 
-    val future: Future[List[PersistedEdge]] = {
-
-      if ( t.hasNext ) {
-        Future.sequence(
-          for ( edge <- t.asScala.toList ) yield edgeReader.read( edge )
-        )
-      }
-      else
-        Future.successful( List() )
+    val check_node = g.V( Long.box( id ) )
+    // Discerning between a node with no edges and a node that does not exist
+    if ( check_node.isEmpty ) {
+      logger.debug( "Node with id " + id + " does not exist, returning NotFound" )
+      Future( NotFound )
     }
-    future.map {
-      case x :: xs => Ok( Json.toJson( x :: xs ) )
-      case _       => NotFound
+    else {
+      val t = g.V( Long.box( id ) ).bothE()
+      val future: Future[List[PersistedEdge]] = {
+        if ( t.hasNext ) {
+          Future.sequence(
+            for ( edge <- t.asScala.toList ) yield edgeReader.read( edge )
+          )
+        }
+        else
+          Future.successful( List() )
+      }
+      future.map {
+        case x :: xs =>
+          logger.debug( "Returning edges for node with id " + id )
+          Ok( Json.toJson( x :: xs ) )
+        case _ =>
+          logger.debug( "Node with id " + id + " has no edges" )
+          Ok( Json.toJson( List.empty[PersistedEdge] ) )
+      }
     }
   }
 
@@ -140,8 +156,12 @@ class GenericExplorerController @Inject() (
         Future.successful( List() )
     }
     future.map {
-      case x :: xs => Ok( Json.toJson( x :: xs ) )
-      case _       => NotFound
+      case x :: xs =>
+        logger.debug( "Returning " + ( x :: xs ).length + " nodes with property " + property )
+        Ok( Json.toJson( x :: xs ) )
+      case _ =>
+        logger.debug( "No nodes with property " + property + " found" )
+        Ok( Json.toJson( List.empty[PersistedVertex] ) )
     }
   }
 
@@ -158,7 +178,14 @@ class GenericExplorerController @Inject() (
         ObjectMatcher.objectToString( v )
       } )
     }
-    future.map( s => Ok( Json.toJson( s ) ) )
+    future.map {
+      case x :: xs =>
+        logger.debug( "Returning " + ( x :: xs ).length + " values with property " + property )
+        Ok( Json.toJson( x :: xs ) )
+      case _ =>
+        logger.debug( "No values for " + property + " found" )
+        Ok( Json.toJson( List.empty[String] ) )
+    }
   }
 
   //Search for nodes with a property and value in a graph
@@ -184,8 +211,12 @@ class GenericExplorerController @Inject() (
       else Future.successful( List() ) // No values exist for this property
 
     future.map {
-      case x :: xs => Ok( Json.toJson( x :: xs ) )
-      case _       => NotFound
+      case x :: xs =>
+        logger.debug( "Returning " + ( x :: xs ).length + " nodes with property " + property + " and value " + value )
+        Ok( Json.toJson( x :: xs ) )
+      case _ =>
+        logger.debug( "No property " + property + " with value " + value + " found" )
+        Ok( Json.toJson( List.empty[PersistedVertex] ) )
     }
   }
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat

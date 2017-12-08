@@ -39,10 +39,10 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{ JsObject, Reads }
 import play.api.test.FakeRequest
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
-import org.apache.tinkerpop.gremlin.structure.{ Edge, Vertex }
 import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext
 
 class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
@@ -73,6 +73,8 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     graph.traversal().V().drop().iterate()
   }
 
+  implicit val ec = ExecutionContext.global
+
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 
   "The lineage from context controller" should {
@@ -91,13 +93,28 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
     }
   }
+
   "The lineage from context controller" should {
-    "return an empty list if the id of the node is not a deployernode" in {
+    "return a 404 NotFound if the node does not exist" in {
+      val id = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
+
+      val result = lineageController.lineageFromContext( id.toString.toLong ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The lineage from context controller" should {
+    "return a 404 NotFound if the id of the node is not a deployernode" in {
       val result = lineageController.lineageFromContext( 0L ).apply( fakerequest )
-      val content = contentAsJson( result ).as[List[JsObject]]
+      val resultStatus = result.map( x => x.header.status )
 
-      content.length mustBe 0
-
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
     }
   }
 
@@ -118,12 +135,26 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The lineage from file controller" should {
-    "return an empty list if the filenode does not exist" in {
-      val result = lineageController.lineageFromContext( 0L ).apply( fakerequest )
-      val content = contentAsJson( result ).as[List[JsObject]]
+    "return a NotFound if the node does not exist " in {
+      val result = lineageController.lineageFromFile( 0L ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
 
-      content.length mustBe 0
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
 
+  "The lineage from file controller" should {
+    "return a NotFound if the node is not a file " in {
+      val id = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
+
+      val result = lineageController.lineageFromFile( id.toString.toLong ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
     }
   }
 
@@ -139,6 +170,30 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = lineageController.retrieveProjectLineage( projectId.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
       content.isEmpty mustBe false
+    }
+  }
+
+  "The project lineage query" should {
+    "return a NotFound if the node does not exist " in {
+      val result = lineageController.retrieveProjectLineage( 0L ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The project lineage query" should {
+    "return a NotFound if the node is not a project" in {
+      val id = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
+
+      val result = lineageController.retrieveProjectLineage( id.toString.toLong ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
     }
   }
 }
