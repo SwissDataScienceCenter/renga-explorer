@@ -22,7 +22,7 @@ import javax.inject.{ Inject, Singleton }
 
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.Constants
-import ch.datascience.graph.elements.persisted.PersistedVertex
+import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json.{ PersistedEdgeFormat, PersistedVertexFormat }
 import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
@@ -31,7 +31,7 @@ import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWit
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.Json
+import play.api.libs.json.{ Format, Json }
 import play.api.libs.ws.WSClient
 import play.api.Logger
 import play.api.mvc._
@@ -90,6 +90,7 @@ class ProjectExplorerController @Inject() (
 
   def retrieveProjectMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve project metadata for project node with id " + id )
+
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
 
@@ -108,29 +109,44 @@ class ProjectExplorerController @Inject() (
     val availableResources = Set( "file", "bucket", "context", "execution" )
 
     val g = graphTraversalSource
+    val check_file = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
 
-    val t: GraphTraversal[Vertex, Vertex] = resource match {
-      case None => {
-        logger.debug( "Requested all resources" )
-        g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV()
+    if ( check_file.isEmpty ) {
+      logger.debug( "Node with id " + id + " is not a project node or does not exist, returning NotFound" )
+      Future( NotFound )
+    }
+
+    else {
+      val t: GraphTraversal[Vertex, Vertex] = resource match {
+        case None =>
+          logger.debug( "Requested all resources" )
+          g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV()
+
+        case Some( x ) =>
+          if ( availableResources.contains( x ) ) {
+            logger.debug( "Requested resource " + x )
+            g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, stringToKey( x ) )
+
+          }
+          else {
+            logger.debug( "Type " + x + " not supported" )
+            throw new UnsupportedOperationException( "Type not supported" )
+          }
       }
-      case Some( x ) =>
-        if ( availableResources.contains( x ) ) {
-          logger.debug( "Requested resource " + x )
-          g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, stringToKey( x ) )
 
-        }
-        else throw new UnsupportedOperationException( "Type not supported" )
-    }
+      val future: Future[List[PersistedVertex]] = graphExecutionContext.execute {
+        Future.sequence( t.toIterable.map( v =>
+          vertexReader.read( v ) ).toList )
+      }
 
-    val future: Future[List[PersistedVertex]] = graphExecutionContext.execute {
-      Future.sequence( t.toIterable.map( v =>
-        vertexReader.read( v ) ).toList )
-    }
-
-    future.map {
-      case x :: xs => Ok( Json.toJson( x :: xs ) )
-      case _       => NotFound
+      future.map {
+        case x :: xs =>
+          logger.debug( "Returning requested resouces" )
+          Ok( Json.toJson( x :: xs ) )
+        case _ =>
+          logger.debug( "No resources found, returning NotFound" )
+          NotFound
+      }
     }
   }
 
@@ -144,6 +160,6 @@ class ProjectExplorerController @Inject() (
     }
   }
 
-  private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
-  private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
+  private[this] implicit lazy val persistedVertexFormat: Format[PersistedVertex] = PersistedVertexFormat
+  private[this] implicit lazy val persistedEdgeFormat: Format[PersistedEdge] = PersistedEdgeFormat
 }

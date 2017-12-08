@@ -119,6 +119,31 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
+  "The project metadata query" should {
+    "return 404 if the requested projectnode is not a project resource" in {
+      val nodeId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
+
+      val result = projectController.retrieveProjectMetadata( nodeId.toString.toLong ).apply( fakerequest )
+
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The project metadata query" should {
+    "return 404 if the requested projectnode does not exist" in {
+      val nodeId = 3
+
+      val result = projectController.retrieveProjectMetadata( nodeId.toString.toLong ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
   "The project resources query" should {
     "return all buckets in a project if resource=bucket" in {
       val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
@@ -144,7 +169,7 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The project resources query" should {
-    "return a 404 if an incorrect project id is given" in {
+    "return a 404 if an node is not a project" in {
       val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id()
 
       val result = projectController.retrieveProjectResources( fileId.toString.toLong, None ).apply( fakerequest )
