@@ -134,24 +134,17 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     objectList.flatMap {
       case i if i.isInstanceOf[util.List[Any]] => i.asInstanceOf[util.List[Any]].asScala.toList
       case i                                   => List( i.asInstanceOf[Any] )
-
+    }
+  }
   "The lineage from deployer controller" should {
-    "return the full lineage tree from a context node" in {
-      val deployerid = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
-      val nodes = g.V( deployerid ).outE( "deployer:launch" ).as( "edge" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read" ).as( "edge" ).otherV().as( "node" ).dedup() ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
-
-      val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
-      val list = for ( i <- c ) yield i.asInstanceOf[util.List[Object]].asScala.toList.length
-      val entries = list.foldLeft( 0 )( _ + _ )
-
+    "return an empty list if the id of the node is not a deployernode" in {
+      val deployerid = g.V().hasNot( "deployer:context" ).asScala.toList.head.id
       val result = lineageController.lineageFromDeployer( deployerid.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
-
-      ( content.length == entries ) mustBe true
-
-
+      content.length mustBe 0
 
     }
   }
+
 }
