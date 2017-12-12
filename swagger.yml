@@ -4,7 +4,7 @@ info:
   title: Graph explorer API
   description: |
     Graph explorer API specification
-  version: '0.0.1'
+  version: '0.1.0'
 # Host and schemes are injected by the service
 # will be prefixed to all paths
 basePath: /api/explorer
@@ -15,6 +15,8 @@ consumes:
 tags:
 - name: 'Explorer-Graph'
   description: 'Graph explorer'
+- name: 'Explorer-Lineage'
+  description: 'Lineage explorer'
 - name: 'Explorer-Projects'
   description: 'Projects explorer'
 - name: 'Explorer-Storage'
@@ -216,6 +218,140 @@ paths:
       security:
       - token_auth:
         - 'profile'
+  /graph/node/{nodeid}/edges:
+    get:
+      tags:
+         - 'Explorer-Graph'
+      summary: 'Edges of node'
+      description:  'Retrieve all edges from the node with nodeid'
+      parameters:
+      - name: nodeid
+        in: path
+        description: 'node id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /graph/nodes/{prop}:
+    get:
+      tags:
+         - 'Explorer-Graph'
+      summary: 'Node property search'
+      description:  'Search nodes in the graph that have a specific property'
+      parameters:
+      - name: property
+        in: path
+        description: 'prop'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /graph/{prop}/values:
+    get:
+      tags:
+         - 'Explorer-Graph'
+      summary: 'Listing property values'
+      description:  'List all values belonging to a specific property'
+      parameters:
+      - name: property
+        in: path
+        description: 'prop'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /graph/nodes/{prop}/{value}:
+    get:
+      tags:
+         - 'Explorer-Graph'
+      summary: 'Node property value search'
+      description:  'Search nodes in graph on property value pair'
+      parameters:
+      - name: property
+        in: path
+        description: 'prop'
+        required: true
+        type: string
+      - name: value
+        in: path
+        description: 'value'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /lineage/context/{contextId}:
+    get:
+      tags:
+         - 'Explorer-Lineage'
+      summary: 'Lineage from context'
+      description:  'Lineage from an execution context '
+      parameters:
+      - name: contextId
+        in: path
+        description: 'context node id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /lineage/file/{fileId}:
+    get:
+      tags:
+         - 'Explorer-Lineage'
+      summary: 'Lineage from file'
+      description:  'Lineage from a file '
+      parameters:
+      - name: fileId
+        in: path
+        description: 'file node id'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /lineage/project/{projectNodeId}:
+    get:
+      tags:
+         - 'Explorer-Lineage'
+      summary: 'Get project lineage'
+      description:  'Get project lineage for projectnode with projectNodeId'
+      parameters:
+      - name: projectNodeId
+        in: path
+        description: 'Project node id'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /projects:
     get:
       tags:
@@ -229,41 +365,64 @@ paths:
       - token_auth:
         - 'profile'
   /projects/user:
-      get:
-        tags:
-           - 'Explorer-Projects'
-        summary: 'List user project nodes'
-        description:  'Get all project nodes of a user with userId (limited)'
-        parameters:
-        - name: userId
-          in: query
-          description: 'User id'
-          required: false
-          type: string
-        responses:
-          200:
-            description: 'Ok'
-        security:
-        - token_auth:
-          - 'profile'
+    get:
+      tags:
+         - 'Explorer-Projects'
+      summary: 'List user project nodes'
+      description:  'Get all project nodes of a user with userId (limited)'
+      parameters:
+      - name: userId
+        in: query
+        description: 'User id'
+        required: false
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /projects/{projectNodeId}:
-      get:
-        tags:
-           - 'Explorer-Projects'
-        summary: 'Get metadata'
-        description:  'Get metadate for projectnode with projectNodeId'
-        parameters:
-        - name: projectNodeId
-          in: path
-          description: 'Project node id'
-          required: true
-          type: string
-        responses:
-          200:
-            description: 'Ok'
-        security:
-        - token_auth:
-          - 'profile'
+    get:
+      tags:
+         - 'Explorer-Projects'
+      summary: 'Get metadata'
+      description:  'Get metadatea for projectnode with projectNodeId'
+      parameters:
+      - name: projectNodeId
+        in: path
+        description: 'Project node id'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
+  /projects/{projectNodeId}/resources:
+    get:
+      tags:
+         - 'Explorer-Projects'
+      summary: 'Get project resources'
+      description:  'Get resource from project with projectNodeId. Resource should be a type that is present in the graph, like bucket, file, execution or context'
+      parameters:
+      - name: projectNodeId
+        in: path
+        description: 'Project node id'
+        required: true
+        type: string
+      - name: resources
+        in: query
+        description: 'Type of resource requested'
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
 securityDefinitions:
   token_auth:
     type: "oauth2"
