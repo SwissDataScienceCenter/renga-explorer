@@ -144,11 +144,4 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
     }
   }
-
 }
-/* graph = JanusGraphFactory.build().set('storage.backend', 'inmemory').open()
- graph.io(IoCore.graphson()).readGraph("test-lineage.json")
-g = graph.traversal()
-g.V().as("node").valueMap().as("values").select("node","values")
-
-* */
