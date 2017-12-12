@@ -44,8 +44,6 @@ import play.api.test.Helpers._
 
 import scala.collection.JavaConverters._
 
-import scala.collection.JavaConversions._
-
 class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with MockitoSugar with BeforeAndAfter {
 
   // Set the stage
@@ -148,3 +146,9 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
 }
+/* graph = JanusGraphFactory.build().set('storage.backend', 'inmemory').open()
+ graph.io(IoCore.graphson()).readGraph("test-lineage.json")
+g = graph.traversal()
+g.V().as("node").valueMap().as("values").select("node","values")
+
+* */
