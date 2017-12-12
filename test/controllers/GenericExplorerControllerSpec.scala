@@ -121,7 +121,6 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   "The edge retrieval of a node controller" should {
     "return a list of in and outgoing edges if the node with id exists" in {
 
- 
       val nodeId = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList.head.id
       val t = g.V( nodeId ).bothE().asScala.toList
       val t_ids = for ( i <- t ) yield i.id.toString
@@ -159,7 +158,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     }
   }
 
-
+  
   "The property search controller" should {
     "return the nodes of a given property if they exist" in {
 

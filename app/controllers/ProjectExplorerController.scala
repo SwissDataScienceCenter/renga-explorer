@@ -141,10 +141,10 @@ class ProjectExplorerController @Inject() (
 
       future.map {
         case x :: xs =>
-          logger.debug( "Returning requested resouces" )
+          logger.debug("Returning requested resouces")
           Ok( Json.toJson( x :: xs ) )
-        case _ =>
-          logger.debug( "No resources found, returning NotFound" )
+        case _       =>
+          logger.debug("No resources found, returning NotFound")
           NotFound
       }
     }

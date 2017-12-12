@@ -82,7 +82,6 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val deployerid = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
       val nodes = g.V( deployerid ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
-      val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
       val s = c.flatMap( ensureList ).toSet
 
       val result = lineageController.lineageFromContext( deployerid.toString.toLong ).apply( fakerequest )
