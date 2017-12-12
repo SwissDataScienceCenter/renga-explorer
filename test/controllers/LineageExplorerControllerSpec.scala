@@ -22,7 +22,8 @@ import java.util
 
 import authorization.{ JWTVerifierProvider, MockJWTVerifierProvider, MockTokenSignerProvider }
 import ch.datascience.graph.Constants
-import ch.datascience.graph.elements.persisted.PersistedVertex
+import ch.datascience.graph.elements.Edge
+import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
 import ch.datascience.graph.elements.persisted.json._
 import ch.datascience.service.utils.persistence.graph.{ JanusGraphProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.scope.Scope
@@ -75,29 +76,62 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 
-  "The lineage from deployer controller" should {
+  "The lineage from context controller" should {
     "return the full lineage tree from a context node" in {
       val deployerid = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
-      val nodes = g.V( deployerid ).outE( "deployer:launch" ).as( "edge" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+      val nodes = g.V( deployerid ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
       val c = ( for ( x <- nodes.asScala.toList ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
-      val list = for ( i <- c ) yield i.asInstanceOf[util.List[Object]].asScala.toList.length
 
-      val result = lineageController.lineageFromDeployer( deployerid.toString.toLong ).apply( fakerequest )
+      val s = flatMapToList( c )
+
+      val result = lineageController.lineageFromContext( deployerid.toString.toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
-      ( content.length == list.sum ) mustBe true
+      ( content.length == s.length ) mustBe true
 
     }
   }
-  "The lineage from deployer controller" should {
+  "The lineage from context controller" should {
     "return an empty list if the id of the node is not a deployernode" in {
-      val deployerid = g.V().hasNot( "deployer:context" ).asScala.toList.head.id
-      val result = lineageController.lineageFromDeployer( deployerid.toString.toLong ).apply( fakerequest )
+      val result = lineageController.lineageFromContext( ( "0" ).toLong ).apply( fakerequest )
       val content = contentAsJson( result ).as[List[JsObject]]
 
       content.length mustBe 0
 
+    }
+  }
+
+  "The lineage from file controller" should {
+    "return the lineage from a file " in {
+
+      val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
+      val nodes = g.V( fileId ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" ).asScala.toList
+
+      val t = ( for ( x <- nodes ) yield x.asScala.toMap.get( "edge" ).toList ).flatten[Object]
+      val s = flatMapToList( t )
+
+      val result = lineageController.lineageFromFile( fileId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[JsObject]]
+
+      ( content.length == s.length ) mustBe true
+    }
+  }
+
+  "The lineage from file controller" should {
+    "return an empty list if the filenode does not exist" in {
+      val result = lineageController.lineageFromContext( ( "0" ).toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[JsObject]]
+
+      content.length mustBe 0
+
+    }
+  }
+
+  def flatMapToList( objectList: List[Object] ) = {
+    objectList.flatMap {
+      case i if i.isInstanceOf[util.List[Any]] => i.asInstanceOf[util.List[Any]].asScala.toList
+      case i                                   => List( i.asInstanceOf[Any] )
     }
   }
 }
