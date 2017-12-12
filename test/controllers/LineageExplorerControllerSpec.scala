@@ -75,6 +75,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat
 
+
   "The lineage from context controller" should {
     "return the full lineage tree from a context node" in {
       val deployerid = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
@@ -131,6 +132,19 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
     objectList.flatMap {
       case i if i.isInstanceOf[util.List[Any]] => i.asInstanceOf[util.List[Any]].asScala.toList
       case i                                   => List( i.asInstanceOf[Any] )
+
+  "The lineage from deployer controller" should {
+    "return the full lineage tree from a context node" in {
+      val deployerid = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
+      val nodes = g.V( deployerid ).outE( "deployer:launch" ).as( "edge" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read" ).as( "edge" ).otherV().as( "node" ).dedup() ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+      //    val t = g.V( Long.box( id ) ).outE( "deployer:launch" ).as( "edge" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read" ).as( "edge" ).otherV().as( "node" ).dedup() ).emit().simplePath().dedup().select[java.lang.Object]( "edge", "node" )
+
+      val snodes = nodes.asScala.toList
+
+      val result = lineageController.lineageFromDeployer( deployerid.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[JsObject]]
+
+
     }
   }
 }
