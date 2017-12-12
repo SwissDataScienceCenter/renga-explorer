@@ -24,11 +24,11 @@ import authorization.JWTVerifierProvider
 import ch.datascience.graph.Constants
 import ch.datascience.graph.elements.persisted.PersistedVertex
 import ch.datascience.graph.elements.persisted.json.{ PersistedEdgeFormat, PersistedVertexFormat }
-import ch.datascience.graph.naming.NamespaceAndName
 import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.Json
@@ -56,11 +56,13 @@ class ProjectExplorerController @Inject() (
   with ControllerWithBodyParseJson
   with ControllerWithGraphTraversal {
 
+  lazy val logger: Logger = Logger( "application.ProjectExplorerController" )
+
   def retrieveProjectByUserName( userId: Option[String] ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val user = userId.getOrElse( request.userId )
 
     val n = 100
-    Logger.debug( "Request to retrieve at most " + n + " project nodes for user " + user )
+    logger.debug( "Request to retrieve at most " + n + " project nodes for user " + user )
     val g = graphTraversalSource
     val t = g.V().has( "resource:owner", user ).has( Constants.TypeKey, "project:project" ).limit( n )
 
@@ -74,7 +76,7 @@ class ProjectExplorerController @Inject() (
 
   def retrieveProjects = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val n = 100
-    Logger.debug( "Request to retrieve at most " + n + " project nodes  " )
+    logger.debug( "Request to retrieve at most " + n + " project nodes  " )
     val g = graphTraversalSource
     val t = g.V().has( Constants.TypeKey, "project:project" ).limit( n )
 
@@ -87,7 +89,7 @@ class ProjectExplorerController @Inject() (
   }
 
   def retrieveProjectMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    Logger.debug( "Request to retrieve project metadata for project node with id " + id )
+    logger.debug( "Request to retrieve project metadata for project node with id " + id )
     val g = graphTraversalSource
     val t = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
 
@@ -98,7 +100,49 @@ class ProjectExplorerController @Inject() (
     future.map( s => Ok( Json.toJson( s ) ) )
 
   }
-  // from a project id all nodes that link with "project: is part of"
+
+  // Retrieve resources linked to project, if no resource specified all nodes are given with the is_part_of edge towards the project
+  def retrieveProjectResources( id: Long, resource: Option[String] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve resource " + resource.getOrElse( "all" ) + "for project with id " + id )
+
+    val availableResources = Set( "file", "bucket", "context", "execution" )
+
+    val g = graphTraversalSource
+
+    val t: GraphTraversal[Vertex, Vertex] = resource match {
+      case None => {
+        logger.debug( "Requested all resources" )
+        g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV()
+      }
+      case Some( x ) =>
+        if ( availableResources.contains( x ) ) {
+          logger.debug( "Requested resource " + x )
+          g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, stringToKey( x ) )
+
+        }
+        else throw new UnsupportedOperationException( "Type not supported" )
+    }
+
+    val future: Future[List[PersistedVertex]] = graphExecutionContext.execute {
+      Future.sequence( t.toIterable.map( v =>
+        vertexReader.read( v ) ).toList )
+    }
+
+    future.map {
+      case x :: xs => Ok( Json.toJson( x :: xs ) )
+      case _       => NotFound
+    }
+  }
+
+  def stringToKey( resource: String ): String = {
+    resource.toLowerCase match {
+      case "file"      => "resource:file"
+      case "bucket"    => "resource:bucket"
+      case "context"   => "deployer:context"
+      case "execution" => "deployer:execution"
+      case _           => throw new UnsupportedOperationException( "Type not supported" )
+    }
+  }
 
   private[this] implicit lazy val persistedVertexFormat = PersistedVertexFormat
   private[this] implicit lazy val persistedEdgeFormat = PersistedEdgeFormat

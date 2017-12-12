@@ -297,8 +297,6 @@ paths:
       - token_auth:
         - 'profile'
   /lineage/context/{contextId}:
-    get:
-      tags:
          - 'Explorer-Lineage'
       summary: 'Lineage from context'
       description:  'Lineage from an execution context '
@@ -428,4 +426,4 @@ securityDefinitions:
     type: "oauth2"
     flow: "implicit"
     scopes:
-profile: user profile
+      profile: user profile

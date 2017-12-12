@@ -21,26 +21,21 @@ package helpers
 import org.apache.tinkerpop.gremlin.structure.Graph
 import org.apache.tinkerpop.gremlin.structure.io.IoCore
 
-object ImportJSONStorageGraph {
+object ImportJSONGraph {
 
-  def populateGraph( graph: Graph ): Unit = {
-    val inputStream = getClass.getResourceAsStream( "/test-graph-storage.json" )
+  def populateGraph( graph: Graph, file: String ): Unit = {
+    val inputStream = getClass.getResourceAsStream( file )
     graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
   }
+
+  def storageGraph( graph: Graph ): Unit = populateGraph( graph, "/test-graph-storage.json" )
+
+  def noFilesGraph( graph: Graph ): Unit = populateGraph( graph, "/test-nofiles.json" )
+
+  def noBucketsGraph( graph: Graph ): Unit = populateGraph( graph, "/test-nobuckets.json" )
+
+  def lineageGraph( graph: Graph ): Unit = populateGraph( graph, "/test-lineage.json" )
+
+  def projectGraph( graph: Graph ): Unit = populateGraph( graph, "/test-project.json" )
 }
 
-object ImportJSONLineageGraph {
-
-  def populateGraph( graph: Graph ): Unit = {
-    val inputStream = getClass.getResourceAsStream( "/test-lineage.json" )
-    graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
-  }
-}
-
-object ImportJSONProjectGraph {
-
-  def populateGraph( graph: Graph ): Unit = {
-    val inputStream = getClass.getResourceAsStream( "/test-project.json" )
-    graph.io( IoCore.graphson() ).reader().create().readGraph( inputStream, graph )
-  }
-}

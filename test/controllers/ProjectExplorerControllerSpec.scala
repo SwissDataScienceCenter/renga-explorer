@@ -29,7 +29,7 @@ import ch.datascience.test.security.FakeRequestWithToken._
 import ch.datascience.test.utils.persistence.graph.MockJanusGraphProvider
 import ch.datascience.test.utils.persistence.scope.MockScope
 import com.auth0.jwt.JWT
-import helpers.ImportJSONProjectGraph
+import helpers.ImportJSONGraph
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{ OneAppPerSuite, PlaySpec }
@@ -69,7 +69,7 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   implicit val reads: Reads[PersistedVertex] = PersistedVertexFormat
 
   before {
-    ImportJSONProjectGraph.populateGraph( graph )
+    ImportJSONGraph.projectGraph( graph )
   }
 
   after {
@@ -85,8 +85,7 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = projectController.retrieveProjects().apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
-      ( content.length == graphFiles.length ) mustBe true
-
+      content.length mustBe graphFiles.length
     }
   }
 
@@ -99,13 +98,12 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val result = projectController.retrieveProjectByUserName( Option( user ) ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
-      ( content.length == graphList.length ) mustBe true
+      content.length mustBe graphList.length
     }
   }
   "The project metadata query" should {
     "return the metadata of a projectnode" in {
       val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
-
       val graphProjectNode = g.V( projectId ).asScala.toList.head
       val graphProjectName = graphProjectNode.value[String]( "project:project_name" )
       val graphProjectOwner = graphProjectNode.value[String]( "resource:owner" )
@@ -116,8 +114,61 @@ class ProjectExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val contentProjectName = content.properties.get( NamespaceAndName( "project", "project_name" ) ).orNull.values.head.self
       val contentProjectOwner = content.properties.get( NamespaceAndName( "resource", "owner" ) ).orNull.values.head.self
 
-      ( contentProjectName == graphProjectName ) mustBe true
-      ( graphProjectOwner == contentProjectOwner ) mustBe true
+      contentProjectName mustBe graphProjectName
+      graphProjectOwner mustBe contentProjectOwner
     }
   }
+
+  "The project resources query" should {
+    "return all buckets in a project if resource=bucket" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, "resource:bucket" ).asScala.toList
+
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, Some( "bucket" ) ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+    }
+  }
+
+  "The project resources query" should {
+    "return all nodes attached to a project if resource=None" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().asScala.toList
+
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, None ).apply( fakerequest )
+      val content = contentAsJson( result ).as[List[PersistedVertex]]
+
+      content.length mustBe t.length
+    }
+  }
+
+  "The project resources query" should {
+    "return a 404 if an incorrect project id is given" in {
+      val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id()
+
+      val result = projectController.retrieveProjectResources( fileId.toString.toLong, None ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+    }
+  }
+
+  "The project resources query" should {
+    "throw an error if a non-supported resource is requested" in {
+      val projectId = g.V().has( Constants.TypeKey, "project:project" ).asScala.toList.head.id()
+      val t = g.V( projectId ).inE( "project:is_part_of" ).otherV().asScala.toList
+
+      val result = projectController.retrieveProjectResources( projectId.toString.toLong, Some( "coffee" ) ).apply( fakerequest )
+      val resultStatus = result.map( x => x.header.status )
+
+      for ( status <- resultStatus ) {
+        status.toString mustBe "404"
+      }
+
+    }
+  }
+
 }
