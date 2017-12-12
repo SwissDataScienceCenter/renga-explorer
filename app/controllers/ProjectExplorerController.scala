@@ -109,9 +109,9 @@ class ProjectExplorerController @Inject() (
     val availableResources = Set( "file", "bucket", "context", "execution" )
 
     val g = graphTraversalSource
-    val check_file = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
+    val check_project = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
 
-    if ( check_file.isEmpty ) {
+    if ( check_project.isEmpty ) {
       logger.debug( "Node with id " + id + " is not a project node or does not exist, returning NotFound" )
       Future( NotFound )
     }
@@ -141,10 +141,10 @@ class ProjectExplorerController @Inject() (
 
       future.map {
         case x :: xs =>
-          logger.debug("Returning requested resouces")
+          logger.debug( "Returning requested resouces" )
           Ok( Json.toJson( x :: xs ) )
-        case _       =>
-          logger.debug("No resources found, returning NotFound")
+        case _ =>
+          logger.debug( "No resources found, returning NotFound" )
           NotFound
       }
     }

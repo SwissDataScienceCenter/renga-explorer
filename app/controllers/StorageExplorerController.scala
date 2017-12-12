@@ -139,8 +139,12 @@ class StorageExplorerController @Inject() (
         Seq.empty
       }
     } ).map( a => a.toList match {
-      case x :: xs => Ok( Json.toJson( ( x :: xs ).toMap ) )
-      case _       => NotFound
+      case x :: xs =>
+        logger.debug( "Returning metadata for file " + path + " in bucket with id " + id )
+        Ok( Json.toJson( ( x :: xs ).toMap ) )
+      case _ =>
+        logger.debug( "No metadata found for file " + path + " in bucket with id " + id + " returning NotFound" )
+        NotFound
     } )
   }
 
@@ -171,8 +175,13 @@ class StorageExplorerController @Inject() (
       }
 
     } ).map( a => a.toList match {
-      case x :: xs => Ok( Json.toJson( ( x :: xs ).toMap ) )
-      case _       => NotFound
+      case x :: xs =>
+        logger.debug( "Returning metadata for file node with id " + id )
+        Ok( Json.toJson( ( x :: xs ).toMap ) )
+      case _ =>
+        // This should not happen
+        logger.debug( "No metadata found, returning NotFound" )
+        NotFound
     } )
   }
 
