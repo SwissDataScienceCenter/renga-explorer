@@ -308,7 +308,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The file meta data exploration controller" should {
-    "should return 404 NotFound if the node is not a file " in {
+    "return 404 NotFound if the node is not a file " in {
 
       val id = g.V().has( Constants.TypeKey, "resource:bucket" ).asScala.toList.head.id
       val result = explorerController.fileMetadata( id.toString.toLong ).apply( fakerequest )
@@ -320,7 +320,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The file meta data exploration controller" should {
-    "should return 404 NotFound if the file does not exist " in {
+    "return 404 NotFound if the file does not exist " in {
 
       val result = explorerController.fileMetadata( "3".toLong ).apply( fakerequest )
       val resultStatus = result.map( x => x.header.status )
@@ -354,7 +354,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The file meta data from path exploration controller" should {
-    "should return 404 NotFound if the filepath does not exist " in {
+    "return 404 NotFound if the filepath does not exist " in {
 
       val bucketId = g.V().out( "resource:has_location" ).out( "resource:stored_in" ).asScala.toList.head
       val result = explorerController.fileMetadatafromPath( bucketId.id.toString.toLong, "fake_path" ).apply( fakerequest )
@@ -366,7 +366,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The file meta data from path exploration controller" should {
-    "should return 404 NotFound if the bucket does not exist " in {
+    "return 404 NotFound if the bucket does not exist " in {
 
       val graphFile = g.V().in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList.head
       val path = graphFile.values[String]( "resource:file_name" ).asScala.toList.head

@@ -102,7 +102,7 @@ class GenericExplorerController @Inject() (
         logger.debug( "Returning metadata for node with id" + id )
         Ok( Json.toJson( vertex )( PersistedVertexFormat ) )
       case None =>
-        logger.debug( "Node with id " + id + " does not exist or does not have any metadata" )
+        logger.debug( "Node with id " + id + " does not exist" )
         NotFound
     }
   }

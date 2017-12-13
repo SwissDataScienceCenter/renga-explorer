@@ -185,7 +185,7 @@ class GenericExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The property search controller" should {
-    "be able to an empty list if no nodes were found with that property" in {
+    "be able to return an empty list if no nodes were found with that property" in {
 
       val prop = "coffee"
 

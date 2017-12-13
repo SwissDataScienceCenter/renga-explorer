@@ -95,7 +95,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The lineage from context controller" should {
-    "return a 404 NotFound if the node does not exist" in {
+    "return a 404 NotFound if the id of the node is not a deployernode" in {
       val id = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
 
       val result = lineageController.lineageFromContext( id.toString.toLong ).apply( fakerequest )
@@ -108,7 +108,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The lineage from context controller" should {
-    "return a 404 NotFound if the id of the node is not a deployernode" in {
+    "return a 404 NotFound if the node does not exist" in {
       val result = lineageController.lineageFromContext( 0L ).apply( fakerequest )
       val resultStatus = result.map( x => x.header.status )
 
@@ -119,7 +119,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The lineage from file controller" should {
-    "return the lineage from a file " in {
+    "return the lineage from a file" in {
 
       val fileId = g.V().has( Constants.TypeKey, "resource:file" ).asScala.toList.head.id
       val nodes = g.V( fileId ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" ).asScala.toList
@@ -135,7 +135,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The lineage from file controller" should {
-    "return a NotFound if the node does not exist " in {
+    "return a NotFound if the node does not exist" in {
       val result = lineageController.lineageFromFile( 0L ).apply( fakerequest )
       val resultStatus = result.map( x => x.header.status )
 
@@ -146,7 +146,7 @@ class LineageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The lineage from file controller" should {
-    "return a NotFound if the node is not a file " in {
+    "return a NotFound if the node is not a file" in {
       val id = g.V().has( Constants.TypeKey, "deployer:context" ).asScala.toList.head.id
 
       val result = lineageController.lineageFromFile( id.toString.toLong ).apply( fakerequest )
