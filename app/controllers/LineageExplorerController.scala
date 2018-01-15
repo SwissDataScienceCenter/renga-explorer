@@ -60,20 +60,20 @@ class LineageExplorerController @Inject() (
 
   lazy val logger: Logger = Logger( "application.LineageExplorerController" )
 
-  def lineageFromContext( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve lineage from deployer with node with id " + id )
+  def lineageFromContext( contextid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve lineage from deployer with node with id " + contextid )
 
     val g = graphTraversalSource
 
-    val check_context = g.V( Long.box( id ) ).has( Constants.TypeKey, "deployer:context" )
+    val check_context = g.V( Long.box( contextid ) ).has( Constants.TypeKey, "deployer:context" )
 
     if ( check_context.isEmpty ) {
-      logger.debug( "Node with id " + id + " is not a context or does not exist, returning NotFound" )
+      logger.debug( "Node with id " + contextid + " is not a context or does not exist, returning NotFound" )
       Future( NotFound )
     }
     else {
-      logger.debug( "Returning lineage for node with id " + id )
-      val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+      logger.debug( "Returning lineage for node with id " + contextid )
+      val t = g.V( Long.box( contextid ) ).repeat( __.bothE( "deployer:launch", "resource:create", "resource:write", "resource:read" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
       val seq = graphExecutionContext.execute {
 
@@ -96,19 +96,19 @@ class LineageExplorerController @Inject() (
     }
   }
 
-  def lineageFromFile( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve lineage from filenode with id " + id )
+  def lineageFromFile( fileid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve lineage from filenode with id " + fileid )
 
     val g = graphTraversalSource
-    val check_file = g.V( Long.box( id ) ).has( Constants.TypeKey, "resource:file" )
+    val check_file = g.V( Long.box( fileid ) ).has( Constants.TypeKey, "resource:file" )
 
     if ( check_file.isEmpty ) {
-      logger.debug( "Node with id " + id + " is not a file or does not exist, returning NotFound" )
+      logger.debug( "Node with id " + fileid + " is not a file or does not exist, returning NotFound" )
       Future( NotFound )
     }
     else {
-      logger.debug( "Returning lineage for file with id " + id )
-      val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+      logger.debug( "Returning lineage for file with id " + fileid )
+      val t = g.V( Long.box( fileid ) ).inE( "resource:version_of" ).otherV().as( "node" ).repeat( __.bothE( "resource:create", "resource:write", "resource:read", "deployer:launch" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
       val seq = graphExecutionContext.execute {
 
         for {
@@ -132,19 +132,19 @@ class LineageExplorerController @Inject() (
     }
   }
 
-  def retrieveProjectLineage( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve project lineage for project node with id " + id )
+  def retrieveProjectLineage( projectid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve project lineage for project node with id " + projectid )
 
     val g = graphTraversalSource
-    val check_project = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
+    val check_project = g.V( Long.box( projectid ) ).has( Constants.TypeKey, "project:project" )
 
     if ( check_project.isEmpty ) {
-      logger.debug( "Node with id " + id + " is not a project or does not exist, returning NotFound" )
+      logger.debug( "Node with id " + projectid + " is not a project or does not exist, returning NotFound" )
       Future( NotFound )
     }
     else {
-      logger.debug( "Returning lineage for project with id " + id )
-      val t = g.V( Long.box( id ) ).repeat( __.bothE( "deployer:launch", "project:is_part_of", "project:used_by" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
+      logger.debug( "Returning lineage for project with id " + projectid )
+      val t = g.V( Long.box( projectid ) ).repeat( __.bothE( "deployer:launch", "project:is_part_of", "project:used_by" ).dedup().as( "edge" ).otherV().as( "node" ) ).emit().simplePath().select[java.lang.Object]( "edge", "node" )
 
       val seq = graphExecutionContext.execute {
 

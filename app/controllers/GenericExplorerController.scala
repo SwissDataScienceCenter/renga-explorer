@@ -84,10 +84,10 @@ class GenericExplorerController @Inject() (
     future.map( i => Ok( Json.toJson( i ) ) )
   }
 
-  def retrieveNodeMetaData( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve data of node with id " + id )
+  def retrieveNodeMetaData( nodeid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve data of node with id " + nodeid )
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) )
+    val t = g.V( Long.box( nodeid ) )
 
     val future: Future[Option[PersistedVertex]] = graphExecutionContext.execute {
       if ( t.hasNext ) {
@@ -99,27 +99,27 @@ class GenericExplorerController @Inject() (
     }
     future.map {
       case Some( vertex ) =>
-        logger.debug( "Returning metadata for node with id" + id )
+        logger.debug( "Returning metadata for node with id" + nodeid )
         Ok( Json.toJson( vertex )( PersistedVertexFormat ) )
       case None =>
-        logger.debug( "Node with id " + id + " does not exist" )
+        logger.debug( "Node with id " + nodeid + " does not exist" )
         NotFound
     }
   }
 
   //Get all edges belonging to a node
-  def retrieveNodeEdges( id: Long ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to ingoing and outgoing edges of node with id " + id )
+  def retrieveNodeEdges( nodeid: Long ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to ingoing and outgoing edges of node with id " + nodeid )
     val g = graphTraversalSource
 
-    val check_node = g.V( Long.box( id ) )
+    val check_node = g.V( Long.box( nodeid ) )
     // Discerning between a node with no edges and a node that does not exist
     if ( check_node.isEmpty ) {
-      logger.debug( "Node with id " + id + " does not exist, returning NotFound" )
+      logger.debug( "Node with id " + nodeid + " does not exist, returning NotFound" )
       Future( NotFound )
     }
     else {
-      val t = g.V( Long.box( id ) ).bothE()
+      val t = g.V( Long.box( nodeid ) ).bothE()
       val future: Future[List[PersistedEdge]] = {
         if ( t.hasNext ) {
           Future.sequence(
@@ -131,10 +131,10 @@ class GenericExplorerController @Inject() (
       }
       future.map {
         case x :: xs =>
-          logger.debug( "Returning edges for node with id " + id )
+          logger.debug( "Returning edges for node with id " + nodeid )
           Ok( Json.toJson( x :: xs ) )
         case _ =>
-          logger.debug( "Node with id " + id + " has no edges" )
+          logger.debug( "Node with id " + nodeid + " has no edges" )
           Ok( Json.toJson( List.empty[PersistedEdge] ) )
       }
     }
