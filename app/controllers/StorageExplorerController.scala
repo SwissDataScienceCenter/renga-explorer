@@ -63,11 +63,13 @@ class StorageExplorerController @Inject() (
 
   lazy val logger: Logger = Logger( "application.StorageExplorerController" )
 
-  def retrieveFilesDate( date1: Long, date2: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+  def retrieveFilesDate( date1: Option[Long], date2: Option[Long] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    val firstdate = date1.getOrElse( 0 )
+    val lastdate = date2.getOrElse( System.currentTimeMillis )
 
-    logger.debug( "Requests to retrieve all files between " + date1 + " and " + date2 )
+    logger.debug( "Requests to retrieve all files between " + firstdate + " and " + lastdate )
     val g = graphTraversalSource
-    val t = g.V().has( "system:creation_time", P.between( date1, date2 ) )
+    val t = g.V().has( "system:creation_time", P.between( firstdate, lastdate ) )
 
     val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
       Future.sequence( t.toIterable.map( v =>
@@ -90,21 +92,21 @@ class StorageExplorerController @Inject() (
 
   }
 
-  def fileList( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve all files in bucket with id " + id )
+  def fileList( bucketid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve all files in bucket with id " + bucketid )
 
     // Check if bucket exists, to distinguish between an existing bucket without files and a node not existing or not being a bucket
     val g = graphTraversalSource
-    val check_bucket = g.V( Long.box( id ) ).has( Constants.TypeKey, "resource:bucket" )
+    val check_bucket = g.V( Long.box( bucketid ) ).has( Constants.TypeKey, "resource:bucket" )
 
     if ( check_bucket.isEmpty ) {
-      logger.debug( "Node with id " + id + " is not a bucket, returning NotFound" )
+      logger.debug( "Node with id " + bucketid + " is not a bucket, returning NotFound" )
       Future( NotFound )
     }
 
     else {
-      logger.debug( "Returning file list for bucket with id " + id )
-      val t = g.V( Long.box( id ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
+      logger.debug( "Returning file list for bucket with id " + bucketid )
+      val t = g.V( Long.box( bucketid ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
 
       val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
         //empty list if no files, 404 if bucket not exists
@@ -118,14 +120,14 @@ class StorageExplorerController @Inject() (
   /**
    * Here the id is the bucket id and the path the filename
    */
-  def fileMetadatafromPath( id: Long, path: String ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve file metadata from bucket with " + id + " with path " + path )
+  def fileMetadatafromPath( bucketid: Long, path: String ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve file metadata from bucket with " + bucketid + " with path " + path )
     val g = graphTraversalSource
-    val t = g.V().has( "resource:file_name", path ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).V( Long.box( id ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
+    val t = g.V().has( "resource:file_name", path ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).V( Long.box( bucketid ) ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
     Future.sequence( graphExecutionContext.execute {
       if ( t.hasNext ) {
-        logger.debug( "Returning meta data for file with path " + path + " and bucket with id " + id )
+        logger.debug( "Returning meta data for file with path " + path + " and bucket with id " + bucketid )
         import scala.collection.JavaConverters._
         val jmap: Map[String, Vertex] = t.next().asScala.toMap
         for {
@@ -135,15 +137,15 @@ class StorageExplorerController @Inject() (
         } yield key -> vertex
       }
       else {
-        logger.debug( "No file with path " + path + " or bucket with id " + id + " found" )
+        logger.debug( "No file with path " + path + " or bucket with id " + bucketid + " found" )
         Seq.empty
       }
     } ).map( a => a.toList match {
       case x :: xs =>
-        logger.debug( "Returning metadata for file " + path + " in bucket with id " + id )
+        logger.debug( "Returning metadata for file " + path + " in bucket with id " + bucketid )
         Ok( Json.toJson( ( x :: xs ).toMap ) )
       case _ =>
-        logger.debug( "No metadata found for file " + path + " in bucket with id " + id + " returning NotFound" )
+        logger.debug( "No metadata found for file " + path + " in bucket with id " + bucketid + " returning NotFound" )
         NotFound
     } )
   }
@@ -152,14 +154,14 @@ class StorageExplorerController @Inject() (
   Returns [Map[String, PersistedVertex]] with keys = "data", "bucket"
    */
 
-  def fileMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve file metadata from file with id " + id )
+  def fileMetadata( fileid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve file metadata from file with id " + fileid )
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).as( "bucket" ).select[Vertex]( "data", "bucket" )
+    val t = g.V( Long.box( fileid ) ).as( "data" ).out( "resource:has_location" ).out( "resource:stored_in" ).as( "bucket" ).select[Vertex]( "data", "bucket" )
 
     Future.sequence( graphExecutionContext.execute {
       if ( t.hasNext ) {
-        logger.debug( "Returning metadata for file with id " + id )
+        logger.debug( "Returning metadata for file with id " + fileid )
         import scala.collection.JavaConverters._
         val jmap: Map[String, Vertex] = t.next().asScala.toMap
         for {
@@ -170,13 +172,13 @@ class StorageExplorerController @Inject() (
       }
       else {
         // The file not having any meta data option should not exist, since it has at least a label saying it is in fact a file
-        logger.debug( "Node with id " + id + " is not a file or does not exist, returning NotFound" )
+        logger.debug( "Node with id " + fileid + " is not a file or does not exist, returning NotFound" )
         Seq.empty
       }
 
     } ).map( a => a.toList match {
       case x :: xs =>
-        logger.debug( "Returning metadata for file node with id " + id )
+        logger.debug( "Returning metadata for file node with id " + fileid )
         Ok( Json.toJson( ( x :: xs ).toMap ) )
       case _ =>
         // This should not happen
@@ -185,10 +187,10 @@ class StorageExplorerController @Inject() (
     } )
   }
 
-  def bucketMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve bucket metadata from bucket with " + id )
+  def bucketMetadata( bucketid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve bucket metadata from bucket with " + bucketid )
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).has( Constants.TypeKey, "resource:bucket" )
+    val t = g.V( Long.box( bucketid ) ).has( Constants.TypeKey, "resource:bucket" )
 
     val future: Future[Option[PersistedVertex]] = graphExecutionContext.execute {
       if ( t.hasNext ) {
@@ -202,33 +204,33 @@ class StorageExplorerController @Inject() (
     future.map {
       case Some( vertex ) =>
         if ( vertex.types.contains( NamespaceAndName( "resource:bucket" ) ) ) {
-          logger.debug( "Returning metadata for bucket with id " + id )
+          logger.debug( "Returning metadata for bucket with id " + bucketid )
           Ok( Json.toJson( vertex )( PersistedVertexFormat ) )
         }
 
         else {
-          logger.debug( "Node with id" + id + " ??? " )
+          logger.debug( "Node with id" + bucketid + " ??? " )
           NotAcceptable // It is not possible to get here imo, this might need to be removed
         }
 
       case None =>
-        logger.debug( "Node with id " + id + " not found or not a bucket, returning NotFound" )
+        logger.debug( "Node with id " + bucketid + " not found or not a bucket, returning NotFound" )
         NotFound
     }
   }
 
-  def retrievefileVersions( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve all file versions from file with id " + id )
+  def retrievefileVersions( fileid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve all file versions from file with id " + fileid )
     val g = graphTraversalSource
-    val check_file = g.V( Long.box( id ) ).has( "type", "resource:file" )
+    val check_file = g.V( Long.box( fileid ) ).has( "type", "resource:file" )
 
     if ( check_file.isEmpty ) {
-      logger.debug( "Node with id " + id + " is not a file or does not exist, returning NotFound" )
+      logger.debug( "Node with id " + fileid + " is not a file or does not exist, returning NotFound" )
       Future( NotFound )
     }
     else {
-      logger.debug( "Returning file versions for file with id " + id )
-      val t = g.V( Long.box( id ) ).inE( "resource:version_of" ).outV().order().by( "system:creation_time", Order.decr )
+      logger.debug( "Returning file versions for file with id " + fileid )
+      val t = g.V( Long.box( fileid ) ).inE( "resource:version_of" ).outV().order().by( "system:creation_time", Order.decr )
 
       val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
         Future.sequence( t.toIterable.map( v =>

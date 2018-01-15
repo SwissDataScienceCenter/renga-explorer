@@ -58,8 +58,8 @@ class ProjectExplorerController @Inject() (
 
   lazy val logger: Logger = Logger( "application.ProjectExplorerController" )
 
-  def retrieveProjectByUserName( userId: Option[String] ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    val user = userId.getOrElse( request.userId )
+  def retrieveProjectByUserName( userid: Option[String] ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    val user = userid.getOrElse( request.userId )
 
     val n = 100
     logger.debug( "Request to retrieve at most " + n + " project nodes for user " + user )
@@ -88,11 +88,11 @@ class ProjectExplorerController @Inject() (
 
   }
 
-  def retrieveProjectMetadata( id: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve project metadata for project node with id " + id )
+  def retrieveProjectMetadata( projectid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve project metadata for project node with id " + projectid )
 
     val g = graphTraversalSource
-    val t = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
+    val t = g.V( Long.box( projectid ) ).has( Constants.TypeKey, "project:project" )
 
     val future: Future[PersistedVertex] = graphExecutionContext.execute {
       vertexReader.read( t.next() )
@@ -103,16 +103,16 @@ class ProjectExplorerController @Inject() (
   }
 
   // Retrieve resources linked to project, if no resource specified all nodes are given with the is_part_of edge towards the project
-  def retrieveProjectResources( id: Long, resource: Option[String] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    logger.debug( "Request to retrieve resource " + resource.getOrElse( "all" ) + "for project with id " + id )
+  def retrieveProjectResources( projectid: Long, resource: Option[String] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    logger.debug( "Request to retrieve resource " + resource.getOrElse( "all" ) + "for project with id " + projectid )
 
     val availableResources = Set( "file", "bucket", "context", "execution" )
 
     val g = graphTraversalSource
-    val check_project = g.V( Long.box( id ) ).has( Constants.TypeKey, "project:project" )
+    val check_project = g.V( Long.box( projectid ) ).has( Constants.TypeKey, "project:project" )
 
     if ( check_project.isEmpty ) {
-      logger.debug( "Node with id " + id + " is not a project node or does not exist, returning NotFound" )
+      logger.debug( "Node with id " + projectid + " is not a project node or does not exist, returning NotFound" )
       Future( NotFound )
     }
 
@@ -120,12 +120,12 @@ class ProjectExplorerController @Inject() (
       val t: GraphTraversal[Vertex, Vertex] = resource match {
         case None =>
           logger.debug( "Requested all resources" )
-          g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV()
+          g.V( Long.box( projectid ) ).inE( "project:is_part_of" ).otherV()
 
         case Some( x ) =>
           if ( availableResources.contains( x ) ) {
             logger.debug( "Requested resource " + x )
-            g.V( Long.box( id ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, stringToKey( x ) )
+            g.V( Long.box( projectid ) ).inE( "project:is_part_of" ).otherV().has( Constants.TypeKey, stringToKey( x ) )
 
           }
           else {
