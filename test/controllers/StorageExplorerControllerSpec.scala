@@ -386,7 +386,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val date1 = dates.head - 1
       val date2 = dates.last + 1
-      val result = explorerController.retrieveFilesDate( date1, date2 ).apply( fakerequest )
+      val result = explorerController.retrieveFilesDate( Some( date1 ), Some( date2 ) ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       val graph = g.V().has( "system:creation_time", P.between( date1, date2 ) ).asScala.toList
@@ -407,10 +407,52 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val date1 = dates.head + 100
       val date2 = dates.last + 101
-      val result = explorerController.retrieveFilesDate( date1, date2 ).apply( fakerequest )
+      val result = explorerController.retrieveFilesDate( Some( date1 ), Some( date2 ) ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       content.length mustBe 0
+    }
+  }
+
+  "The date search controller" should {
+    "return set the first date to 0 if no date1 is given " in {
+      val graphFile = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList
+      val dates = graphFile.head.values[Long]( "system:creation_time" ).asScala.toList
+
+      val date1 = 0
+      val date2 = dates.last + 101
+      val result = explorerController.retrieveFilesDate( None, Some( date2 ) ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      val graph = g.V().has( "system:creation_time", P.between( date1, date2 ) ).asScala.toList
+
+      graph.length mustBe content.length
+
+      val contentTimestamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
+      val graphTimestamps = for ( vertex <- graph ) yield vertex.value[Long]( "system:creation_time" )
+
+      contentTimestamps.toSet mustBe graphTimestamps.toSet
+    }
+  }
+
+  "The date search controller" should {
+    "return set the last date to now if no date2 is given " in {
+      val graphFile = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList
+      val dates = graphFile.head.values[Long]( "system:creation_time" ).asScala.toList
+
+      val date1 = 100
+      val date2 = System.currentTimeMillis
+      val result = explorerController.retrieveFilesDate( Some( date1 ), None ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      val graph = g.V().has( "system:creation_time", P.between( date1, date2 ) ).asScala.toList
+
+      graph.length mustBe content.length
+
+      val contentTimestamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
+      val graphTimestamps = for ( vertex <- graph ) yield vertex.value[Long]( "system:creation_time" )
+
+      contentTimestamps.toSet mustBe graphTimestamps.toSet
     }
   }
 

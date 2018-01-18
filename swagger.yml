@@ -22,35 +22,26 @@ tags:
 - name: 'Explorer-Storage'
   description: 'Storage explorer'
 paths:
-  /storage/bucket/{bucketId}:
+ /storage/buckets:
     get:
       tags:
       - 'Explorer-Storage'
-      summary: 'Bucket metadata'
-      description: 'Access bucket metadata'
-      parameters:
-      - name: bucketId
-        in: path
-        description: 'Bucket graph id'
-        required: true
-        type: integer
-        format: int64
+      summary: 'Bucket list'
+      description: 'List all available buckets'
       responses:
         200:
           description: 'Ok'
-        404:
-          description: 'Bucket not found'
       security:
       - token_auth:
         - 'profile'
-  /storage/file/{fileId}:
+  /storage/files/{fileid}:
     get:
       tags:
       - 'Explorer-Storage'
       summary: 'File metadata'
       description: 'Access file metadata'
       parameters:
-      - name: fileId
+      - name: fileid
         in: path
         description: 'File graph id'
         required: true
@@ -64,14 +55,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/bucket/{bucketId}/files:
+  /storage/buckets/{bucketid}/files:
     get:
       tags:
       - 'Explorer-Storage'
       summary: 'Bucket files'
       description: 'List all files in a bucket'
       parameters:
-      - name: bucketId
+      - name: bucketid
         in: path
         description: 'Bucket graph id'
         required: true
@@ -85,26 +76,35 @@ paths:
       security:
       - token_auth:
          - 'profile'
-  /storage/bucket:
+  /storage/buckets/{bucketid}:
     get:
       tags:
       - 'Explorer-Storage'
-      summary: 'Bucket list'
-      description: 'List all available buckets'
+      summary: 'Bucket metadata'
+      description: 'Access bucket metadata'
+      parameters:
+      - name: bucketid
+        in: path
+        description: 'Bucket graph id'
+        required: true
+        type: integer
+        format: int64
       responses:
         200:
           description: 'Ok'
+        404:
+          description: 'Bucket not found'
       security:
       - token_auth:
         - 'profile'
-  /storage/bucket/{bucketId}/files/{path}:
+  /storage/buckets/{bucketid}/files/{path}:
     get:
       tags:
         - 'Explorer-Storage'
       summary: 'Access file metadata'
       description: 'File metadata from bucket and path'
       parameters:
-      - name: bucketId
+      - name: bucketid
         in: path
         description: 'Bucket graph id'
         required: true
@@ -123,14 +123,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/file/{fileId}/versions:
+  /storage/files/{fileid}/versions:
     get:
       tags:
         - 'Explorer-Storage'
       summary: 'File versions'
       description:  'Get all version from a file'
       parameters:
-      - name: fileId
+      - name: fileid
         in: path
         description: 'File graph id'
         required: true
@@ -144,7 +144,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/file/timestamps/{date1}/{date2}:
+  /storage/files/timestamps:
     get:
       tags:
          - 'Explorer-Storage'
@@ -154,13 +154,13 @@ paths:
       - name: date1
         in: path
         description: 'Lower timestamp'
-        required: true
+        required: false
         type: integer
         format: int64
       - name: date2
         in: path
         description: 'Upper timestamp'
-        required: true
+        required: false
         type: integer
         format: int64
       responses:
@@ -187,7 +187,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /graph/full:
+  /graph:
     get:
       tags:
          - 'Explorer-Graph'
@@ -199,7 +199,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /graph/node/{nodeid}:
+  /graph/nodes/{nodeid}:
     get:
       tags:
          - 'Explorer-Graph'
@@ -218,7 +218,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /graph/node/{nodeid}/edges:
+  /graph/nodes/{nodeid}/edges:
     get:
       tags:
          - 'Explorer-Graph'
@@ -296,16 +296,16 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/context/{contextId}:
+  /lineage/contexts/{contextid}:
     get:
       tags:
          - 'Explorer-Lineage'
       summary: 'Lineage from context'
       description:  'Lineage from an execution context '
       parameters:
-      - name: contextId
+      - name: contextid
         in: path
-        description: 'context node id'
+        description: 'Context node id'
         required: true
         type: integer
         format: int64
@@ -315,14 +315,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/file/{fileId}:
+  /lineage/files/{fileid}:
     get:
       tags:
          - 'Explorer-Lineage'
       summary: 'Lineage from file'
       description:  'Lineage from a file '
       parameters:
-      - name: fileId
+      - name: fileid
         in: path
         description: 'file node id'
         required: true
@@ -334,14 +334,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/project/{projectNodeId}:
+  /lineage/projects/{projectid}:
     get:
       tags:
          - 'Explorer-Lineage'
       summary: 'Get project lineage'
       description:  'Get project lineage for projectnode with projectNodeId'
       parameters:
-      - name: projectNodeId
+      - name: projectid
         in: path
         description: 'Project node id'
         required: true
@@ -364,14 +364,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/user:
+  /projects/users:
     get:
       tags:
          - 'Explorer-Projects'
       summary: 'List user project nodes'
-      description:  'Get all project nodes of a user with userId (limited)'
+      description:  'Get all project nodes of a user with userid (limited)'
       parameters:
-      - name: userId
+      - name: userid
         in: query
         description: 'User id'
         required: false
@@ -382,14 +382,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/{projectNodeId}:
+  /projects/{projectid}:
     get:
       tags:
          - 'Explorer-Projects'
       summary: 'Get metadata'
       description:  'Get metadatea for projectnode with projectNodeId'
       parameters:
-      - name: projectNodeId
+      - name: projectid
         in: path
         description: 'Project node id'
         required: true
@@ -400,14 +400,14 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/{projectNodeId}/resources:
+  /projects/{projectid}/resources:
     get:
       tags:
          - 'Explorer-Projects'
       summary: 'Get project resources'
       description:  'Get resource from project with projectNodeId. Resource should be a type that is present in the graph, like bucket, file, execution or context'
       parameters:
-      - name: projectNodeId
+      - name: projectid
         in: path
         description: 'Project node id'
         required: true
@@ -415,7 +415,7 @@ paths:
       - name: resources
         in: query
         description: 'Type of resource requested'
-        required: true
+        required: false
         type: string
       responses:
         200:
