@@ -22,7 +22,7 @@ tags:
 - name: 'Explorer-Storage'
   description: 'Storage explorer'
 paths:
- /storage/buckets:
+  /storage/bucket:
     get:
       tags:
       - 'Explorer-Storage'
@@ -34,7 +34,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/files/{fileid}:
+  /storage/file/{fileid}:
     get:
       tags:
       - 'Explorer-Storage'
@@ -55,18 +55,23 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/buckets/{bucketid}/files:
+  /storage/bucket/{bucketid}/files:
     get:
       tags:
       - 'Explorer-Storage'
       summary: 'Bucket files'
-      description: 'List all files in a bucket'
+      description: 'List all files in a bucket, unlimited unless param n is defined'
       parameters:
       - name: bucketid
         in: path
         description: 'Bucket graph id'
         required: true
         type: integer
+        format: int64
+      - name: n
+        in: path
+        description: 'Nr of files delimiter'
+        required: false
         format: int64
       responses:
         200:
@@ -76,7 +81,7 @@ paths:
       security:
       - token_auth:
          - 'profile'
-  /storage/buckets/{bucketid}:
+  /storage/bucket/{bucketid}:
     get:
       tags:
       - 'Explorer-Storage'
@@ -97,7 +102,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/buckets/{bucketid}/files/{path}:
+  /storage/bucket/{bucketid}/files/{path}:
     get:
       tags:
         - 'Explorer-Storage'
@@ -123,7 +128,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/files/{fileid}/versions:
+  /storage/file/{fileid}/versions:
     get:
       tags:
         - 'Explorer-Storage'
@@ -144,7 +149,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /storage/files/timestamps:
+  /storage/file/timestamps/{date1}/{date2}:
     get:
       tags:
          - 'Explorer-Storage'
@@ -154,13 +159,13 @@ paths:
       - name: date1
         in: path
         description: 'Lower timestamp'
-        required: false
+        required: true
         type: integer
         format: int64
       - name: date2
         in: path
         description: 'Upper timestamp'
-        required: false
+        required: true
         type: integer
         format: int64
       responses:
@@ -199,7 +204,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /graph/nodes/{nodeid}:
+  /graph/node/{nodeid}:
     get:
       tags:
          - 'Explorer-Graph'
@@ -218,7 +223,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /graph/nodes/{nodeid}/edges:
+  /graph/node/{nodeid}/edges:
     get:
       tags:
          - 'Explorer-Graph'
@@ -296,7 +301,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/contexts/{contextid}:
+  /lineage/context/{contextid}:
     get:
       tags:
          - 'Explorer-Lineage'
@@ -315,7 +320,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/files/{fileid}:
+  /lineage/file/{fileid}:
     get:
       tags:
          - 'Explorer-Lineage'
@@ -334,7 +339,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /lineage/projects/{projectid}:
+  /lineage/project/{projectid}:
     get:
       tags:
          - 'Explorer-Lineage'
@@ -364,7 +369,7 @@ paths:
       security:
       - token_auth:
         - 'profile'
-  /projects/users:
+  /projects/user:
     get:
       tags:
          - 'Explorer-Projects'

@@ -4,28 +4,31 @@
 # ~~~~
 
 # Api spec
+
+
 GET      /swagger.json                            controllers.SwaggerController.getSwagger
-GET      /storage/buckets                         controllers.StorageExplorerController.bucketList
-GET      /storage/files/:fileid                   controllers.StorageExplorerController.fileMetadata(fileid: Long)
-GET      /storage/buckets/:bucketid/files         controllers.StorageExplorerController.fileList(bucketid: Long)
-GET      /storage/buckets/:bucketid               controllers.StorageExplorerController.bucketMetadata(bucketid: Long)
-GET      /storage/buckets/:bucketid/files/:path   controllers.StorageExplorerController.fileMetadatafromPath(bucketid: Long, path: String)
-GET      /storage/files/:fileid/versions          controllers.StorageExplorerController.retrievefileVersions( fileid: Long )
-GET      /storage/files/timestamps                controllers.StorageExplorerController.retrieveFilesDate( date1: Option[Long], date2: Option[Long] )
+GET      /storage/bucket                          controllers.StorageExplorerController.bucketList
+GET      /storage/file/:fileid                    controllers.StorageExplorerController.fileMetadata(fileid: Long)
+GET      /storage/bucket/:bucketid/files          controllers.StorageExplorerController.fileList(bucketid: Long, n: Option[Int])
+GET      /storage/bucket/:bucketid                controllers.StorageExplorerController.bucketMetadata(bucketid: Long)
+GET      /storage/bucket/:bucketid/files/:path    controllers.StorageExplorerController.fileMetadatafromPath(bucketid: Long, path: String)
+GET      /storage/file/:fileid/versions           controllers.StorageExplorerController.retrievefileVersions(fileid: Long)
+# TODO refactor with query params
+GET      /storage/file/timestamps/:date1/:date2   controllers.StorageExplorerController.retrieveFilesDate( date1: Long, date2: Long )
 GET      /storage                                 controllers.StorageExplorerController.retrieveByUserName(userId: String)
 
-GET      /graph                                   controllers.GenericExplorerController.retrieveGraphSubset
-GET      /graph/nodes/:nodeid                     controllers.GenericExplorerController.retrieveNodeMetaData( nodeid: Long )
-GET      /graph/nodes/:nodeid/edges               controllers.GenericExplorerController.retrieveNodeEdges( nodeid: Long )
+GET      /graph/full                              controllers.GenericExplorerController.retrieveGraphSubset
+GET      /graph/node/:nodeid                      controllers.GenericExplorerController.retrieveNodeMetaData( nodeid: Long )
+GET      /graph/node/:nodeid/edges                controllers.GenericExplorerController.retrieveNodeEdges( nodeid: Long )
 GET      /graph/nodes/:prop                       controllers.GenericExplorerController.retrieveNodesWithProperty( prop: String )
 GET      /graph/:prop/values                      controllers.GenericExplorerController.getValuesForProperty( prop: String )
 GET      /graph/nodes/:prop/:value                controllers.GenericExplorerController.retrieveNodePropertyAndValue( prop: String, value: String)
 
-GET      /lineage/contexts/:contextid             controllers.LineageExplorerController.lineageFromContext(contextid: Long)
-GET      /lineage/files/:fileid                   controllers.LineageExplorerController.lineageFromFile(fileid: Long)
-GET      /lineage/projects/:projectid             controllers.LineageExplorerController.retrieveProjectLineage(projectid: Long)
+GET      /lineage/context/:contextid              controllers.LineageExplorerController.lineageFromContext(contextid: Long)
+GET      /lineage/file/:fileid                    controllers.LineageExplorerController.lineageFromFile(fileid: Long)
+GET      /lineage/project/:projectid              controllers.LineageExplorerController.retrieveProjectLineage(projectid: Long)
 
 GET      /projects                                controllers.ProjectExplorerController.retrieveProjects
-GET      /projects/users                          controllers.ProjectExplorerController.retrieveProjectByUserName(userid: Option[String] )
+GET      /projects/user                           controllers.ProjectExplorerController.retrieveProjectByUserName(userid: Option[String] )
 GET      /projects/:projectid                     controllers.ProjectExplorerController.retrieveProjectMetadata( projectid: Long )
 GET      /projects/:projectid/resources           controllers.ProjectExplorerController.retrieveProjectResources( projectid: Long, resource: Option[String] )

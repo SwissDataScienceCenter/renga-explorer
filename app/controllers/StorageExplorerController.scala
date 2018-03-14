@@ -19,7 +19,6 @@
 package controllers
 
 import javax.inject.{ Inject, Singleton }
-
 import authorization.JWTVerifierProvider
 import ch.datascience.graph.Constants
 import ch.datascience.graph.elements.persisted.{ PersistedEdge, PersistedVertex }
@@ -29,6 +28,7 @@ import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.{ GraphTraversal, GraphTraversalSource }
 import org.apache.tinkerpop.gremlin.process.traversal.{ Order, P }
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -36,7 +36,6 @@ import play.api.libs.json.{ Format, Json }
 import play.api.libs.ws.WSClient
 import play.api.Logger
 import play.api.mvc._
-
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
 
@@ -63,9 +62,12 @@ class StorageExplorerController @Inject() (
 
   lazy val logger: Logger = Logger( "application.StorageExplorerController" )
 
-  def retrieveFilesDate( date1: Option[Long], date2: Option[Long] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
-    val firstdate = date1.getOrElse( 0 )
-    val lastdate = date2.getOrElse( System.currentTimeMillis )
+  def retrieveFilesDate( date1: Long, date2: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    // val firstdate = date1.getOrElse( 0 )
+    // val lastdate = date2.getOrElse( System.currentTimeMillis )
+
+    val firstdate = date1
+    val lastdate = date2
 
     logger.debug( "Requests to retrieve all files between " + firstdate + " and " + lastdate )
     val g = graphTraversalSource
@@ -91,10 +93,28 @@ class StorageExplorerController @Inject() (
     future.map( s => Ok( Json.toJson( s ) ) )
 
   }
+  def getx( bucketid: Long, n: Option[Int], g: GraphTraversalSource ): GraphTraversal[Vertex, Vertex] = {
+    val nrfiles = n.getOrElse( 0 )
+    nrfiles match {
+      case 0 =>
+        logger.debug( "No file limit requested, returning all files in bucket " )
+        g.V( Long.box( bucketid ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
 
-  def fileList( bucketid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+      case x: Int =>
+        logger.debug( "File limit of " + x + " requested, returning " + x + " file(s) in bucket " )
+        g.V( Long.box( bucketid ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).tail( x )
+
+      //      case _ =>
+      //        logger.debug( "Wrong input" )
+      //        getx( bucketid, Some( 0 ), g )
+
+    }
+  }
+
+  def fileList( bucketid: Long, n: Option[Int] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve all files in bucket with id " + bucketid )
 
+    // val nrfiles = n.getOrElse( 0 )
     // Check if bucket exists, to distinguish between an existing bucket without files and a node not existing or not being a bucket
     val g = graphTraversalSource
     val check_bucket = g.V( Long.box( bucketid ) ).has( Constants.TypeKey, "resource:bucket" )
@@ -106,7 +126,7 @@ class StorageExplorerController @Inject() (
 
     else {
       logger.debug( "Returning file list for bucket with id " + bucketid )
-      val t = g.V( Long.box( bucketid ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" )
+      val t = getx( bucketid, n, g )
 
       val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
         //empty list if no files, 404 if bucket not exists
