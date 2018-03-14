@@ -28,6 +28,7 @@ import ch.datascience.service.security.ProfileFilterAction
 import ch.datascience.service.utils.persistence.graph.{ GraphExecutionContextProvider, JanusGraphTraversalSourceProvider }
 import ch.datascience.service.utils.persistence.reader.{ EdgeReader, VertexReader }
 import ch.datascience.service.utils.{ ControllerWithBodyParseJson, ControllerWithGraphTraversal }
+import org.janusgraph.core.attribute.Text._
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.{ GraphTraversal, GraphTraversalSource }
 import org.apache.tinkerpop.gremlin.process.traversal.{ Order, P }
 import org.apache.tinkerpop.gremlin.structure.Vertex
@@ -93,7 +94,7 @@ class StorageExplorerController @Inject() (
     future.map( s => Ok( Json.toJson( s ) ) )
 
   }
-  def getx( bucketid: Long, n: Option[Int], g: GraphTraversalSource ): GraphTraversal[Vertex, Vertex] = {
+  def getFiles( bucketid: Long, n: Option[Int], g: GraphTraversalSource ): GraphTraversal[Vertex, Vertex] = {
     val nrfiles = n.getOrElse( 0 )
     nrfiles match {
       case 0 =>
@@ -126,7 +127,7 @@ class StorageExplorerController @Inject() (
 
     else {
       logger.debug( "Returning file list for bucket with id " + bucketid )
-      val t = getx( bucketid, n, g )
+      val t = getFiles( bucketid, n, g )
 
       val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
         //empty list if no files, 404 if bucket not exists
@@ -260,7 +261,7 @@ class StorageExplorerController @Inject() (
     }
   }
 
-  def retrieveByUserName( userId: String ) = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+  def retrieveByUserName( userId: String ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     val n = 100
     logger.debug( "Request to retrieve at most " + n + " nodes for user " + userId )
     val g = graphTraversalSource
@@ -272,6 +273,19 @@ class StorageExplorerController @Inject() (
     }
     future.map( s => Ok( Json.toJson( s ) ) )
 
+  }
+
+  def retrieveNotebooks( bucketid: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+
+    logger.debug( "Request to retrieve notebooks in bucket" + bucketid )
+    val g = graphTraversalSource
+    val t = g.V().has( Constants.TypeKey, "resource:bucket" ).in( "resource:stored_in" ).in( "resource:has_location" ).has( "resource:file_name", textRegex( ".*.ipynb" ) )
+
+    val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
+      Future.sequence( t.toIterable.map( v =>
+        vertexReader.read( v ) ).toSeq )
+    }
+    future.map( s => Ok( Json.toJson( s ) ) )
   }
 
   private[this] implicit lazy val persistedVertexFormat: Format[PersistedVertex] = PersistedVertexFormat
