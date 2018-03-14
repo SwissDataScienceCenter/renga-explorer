@@ -175,7 +175,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val bucketId = graphBucketId.toString.toLong
 
-      val result = explorerController.fileList( bucketId ).apply( fakerequest )
+      val result = explorerController.fileList( bucketId, None ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
       val fileNames = for ( file <- content ) yield file.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self
 
@@ -195,7 +195,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val graphBucketId = getBucketsFromGraph().head
       val bucketId = graphBucketId.toString.toLong
 
-      val result = explorerController.fileList( bucketId ).apply( fakerequest )
+      val result = explorerController.fileList( bucketId, None ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       content.length mustBe 0
@@ -203,10 +203,10 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   }
 
   "The file exploration controller" should {
-    "should return 404 if the requested node is not a bucket" in {
+    "a limited list of query parameter n is given" in {
       val id = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList.head.id
 
-      val result = explorerController.fileList( id.toString.toLong ).apply( fakerequest )
+      val result = explorerController.fileList( id.toString.toLong, None ).apply( fakerequest )
 
       val resultStatus = result.map( x => x.header.status )
       for ( status <- resultStatus ) {
@@ -218,12 +218,40 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
   "The file exploration controller" should {
     "should return 404 if the node does not exist" in {
 
-      val result = explorerController.fileList( "5".toLong ).apply( fakerequest )
+      val result = explorerController.fileList( "5".toLong, None ).apply( fakerequest )
 
       val resultStatus = result.map( x => x.header.status )
       for ( status <- resultStatus ) {
         status.toString mustBe "404"
       }
+    }
+  }
+
+  "The file exploration controller" should {
+    "should not the amount of returned files if the query param is not given" in {
+      val graphBucketId = getBucketsFromGraph().head
+
+      val bucketId = graphBucketId.toString.toLong
+
+      val result = explorerController.fileList( bucketId, None ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      val graphFiles = g.V( graphBucketId ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).asScala.toList
+
+      content.length mustBe graphFiles.length
+    }
+  }
+
+  "The file exploration controller" should {
+    "should limit the amount of returned files if the query param is given " in {
+      val graphBucketId = getBucketsFromGraph().head
+
+      val bucketId = graphBucketId.toString.toLong
+
+      val result = explorerController.fileList( bucketId, Some( 1 ) ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      content.length mustBe 1
     }
   }
 
@@ -386,7 +414,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val date1 = dates.head - 1
       val date2 = dates.last + 1
-      val result = explorerController.retrieveFilesDate( Some( date1 ), Some( date2 ) ).apply( fakerequest )
+      val result = explorerController.retrieveFilesDate( date1, date2 ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       val graph = g.V().has( "system:creation_time", P.between( date1, date2 ) ).asScala.toList
@@ -407,14 +435,15 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       val date1 = dates.head + 100
       val date2 = dates.last + 101
-      val result = explorerController.retrieveFilesDate( Some( date1 ), Some( date2 ) ).apply( fakerequest )
+      val result = explorerController.retrieveFilesDate( date1, date2 ).apply( fakerequest )
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
 
       content.length mustBe 0
     }
   }
 
-  "The date search controller" should {
+  // TODO add following tests again if the dates are query params
+  /*"The date search controller" should {
     "return set the first date to 0 if no date1 is given " in {
       val graphFile = g.V().has( Constants.TypeKey, "resource:file_version" ).asScala.toList
       val dates = graphFile.head.values[Long]( "system:creation_time" ).asScala.toList
@@ -455,7 +484,7 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       contentTimestamps.toSet mustBe graphTimestamps.toSet
     }
   }
-
+*/
   "The user-search controller " should {
     "return all vertices owned by that user" in {
 
