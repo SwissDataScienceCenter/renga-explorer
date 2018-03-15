@@ -121,7 +121,6 @@ class StorageExplorerController @Inject() (
   def fileList( bucketid: Long, n: Option[Int] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve all files in bucket with id " + bucketid )
 
-    // val nrfiles = n.getOrElse( 0 )
     // Check if bucket exists, to distinguish between an existing bucket without files and a node not existing or not being a bucket
     val g = graphTraversalSource
 
