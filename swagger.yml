@@ -192,6 +192,25 @@ paths:
       security:
       - token_auth:
         - 'profile'
+  /storage/bucket/:bucketid/notebooks:
+    get:
+      tags:
+        - 'Explorer-Storage'
+      summary: 'Notebooks from bucket'
+      description: 'Retrieves files with a jupyter notebook extention from a bucket'
+      parameters:
+      - name: bucketid
+        in: query
+        description: 'Id of bucket'
+        required: true
+        type: integer
+        format: int64
+      responses:
+        200:
+          description: 'Ok'
+      security:
+      - token_auth:
+        - 'profile'
   /graph:
     get:
       tags:
