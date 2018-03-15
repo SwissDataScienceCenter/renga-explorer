@@ -268,6 +268,8 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
       val contentTimeStamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
 
+      println( content )
+
       content.length mustBe graphVersions.length
       contentTimeStamps.toSet mustBe graphVersionTimeStamps.toSet
     }
@@ -501,6 +503,31 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
 
       content_owners.toSet( graphUserId ) mustBe true
       content_owners.toSet.toList.length mustBe 1
+    }
+  }
+
+  "The notebook controller " should {
+    "return notebooks from a bucket if they are present" in {
+
+      val notebookfile = g.V().has( "resource:file_name", "testnotebook.ipynb" ).asScala.toList.head //This is hardcoded, be careful when changing the test graph
+      val bucketId = g.V( notebookfile.id ).out( "resource:has_location" ).out( "resource:stored_in" ).asScala.toList.head.id
+
+      val result = explorerController.retrieveNotebooks( bucketId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+      val filenames = for ( item <- content ) yield item.properties.get( NamespaceAndName( "resource", "file_name" ) ).orNull.values.head.self
+      filenames.head mustBe "testnotebook.ipynb"
+    }
+  }
+
+  "The notebook controller " should {
+    "return r?? if there are notebooks in the bucket" in {
+
+      val bucketId = g.V().has( "resource:bucket_name", "bucket_01" ).asScala.toList.head.id //This is hardcoded, be careful when changing the test graph
+      val result = explorerController.retrieveNotebooks( bucketId.toString.toLong ).apply( fakerequest )
+      val content = contentAsJson( result ).as[Seq[PersistedVertex]]
+
+      content.length mustBe 0
+
     }
   }
 }

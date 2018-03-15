@@ -64,6 +64,7 @@ class StorageExplorerController @Inject() (
   lazy val logger: Logger = Logger( "application.StorageExplorerController" )
 
   def retrieveFilesDate( date1: Long, date2: Long ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
+    // TODO uncomment when dates are optional
     // val firstdate = date1.getOrElse( 0 )
     // val lastdate = date2.getOrElse( System.currentTimeMillis )
 
@@ -112,29 +113,31 @@ class StorageExplorerController @Inject() (
     }
   }
 
+  def checkIfBucket( bucketid: Long, g: GraphTraversalSource ): Boolean = {
+    val check_bucket = g.V( Long.box( bucketid ) ).has( Constants.TypeKey, "resource:bucket" )
+    check_bucket.nonEmpty
+  }
+
   def fileList( bucketid: Long, n: Option[Int] ): Action[AnyContent] = ProfileFilterAction( jwtVerifier.get ).async { implicit request =>
     logger.debug( "Request to retrieve all files in bucket with id " + bucketid )
 
     // val nrfiles = n.getOrElse( 0 )
     // Check if bucket exists, to distinguish between an existing bucket without files and a node not existing or not being a bucket
     val g = graphTraversalSource
-    val check_bucket = g.V( Long.box( bucketid ) ).has( Constants.TypeKey, "resource:bucket" )
 
-    if ( check_bucket.isEmpty ) {
-      logger.debug( "Node with id " + bucketid + " is not a bucket, returning NotFound" )
-      Future( NotFound )
-    }
-
-    else {
+    if ( checkIfBucket( bucketid, g ) ) {
       logger.debug( "Returning file list for bucket with id " + bucketid )
       val t = getFiles( bucketid, n, g )
 
       val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
-        //empty list if no files, 404 if bucket not exists
         Future.sequence( t.toIterable.map( v =>
           vertexReader.read( v ) ).toSeq )
       }
       future.map( s => Ok( Json.toJson( s ) ) )
+    }
+    else {
+      logger.debug( "Node with id " + bucketid + " is not a bucket, returning NotFound" )
+      Future( NotFound )
     }
   }
 
@@ -279,13 +282,21 @@ class StorageExplorerController @Inject() (
 
     logger.debug( "Request to retrieve notebooks in bucket" + bucketid )
     val g = graphTraversalSource
-    val t = g.V().has( Constants.TypeKey, "resource:bucket" ).in( "resource:stored_in" ).in( "resource:has_location" ).has( "resource:file_name", textRegex( ".*.ipynb" ) )
 
-    val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
-      Future.sequence( t.toIterable.map( v =>
-        vertexReader.read( v ) ).toSeq )
+    if ( checkIfBucket( bucketid, g ) ) {
+      logger.debug( "Returning file list for bucket with id " + bucketid )
+      val t = g.V( Long.box( bucketid ) ).has( Constants.TypeKey, "resource:bucket" ).in( "resource:stored_in" ).in( "resource:has_location" ).has( "resource:file_name", textRegex( ".*.ipynb" ) )
+      val future: Future[Seq[PersistedVertex]] = graphExecutionContext.execute {
+        Future.sequence( t.toIterable.map( v =>
+          vertexReader.read( v ) ).toSeq )
+      }
+      future.map( s => Ok( Json.toJson( s ) ) )
     }
-    future.map( s => Ok( Json.toJson( s ) ) )
+    else {
+      logger.debug( "Node with id " + bucketid + " is not a bucket, returning NotFound" )
+      Future( NotFound )
+    }
+
   }
 
   private[this] implicit lazy val persistedVertexFormat: Format[PersistedVertex] = PersistedVertexFormat
