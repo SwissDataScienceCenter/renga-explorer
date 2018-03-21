@@ -268,8 +268,6 @@ class StorageExplorerControllerSpec extends PlaySpec with OneAppPerSuite with Mo
       val content = contentAsJson( result ).as[Seq[PersistedVertex]]
       val contentTimeStamps = for ( node <- content ) yield node.properties.get( NamespaceAndName( "system", "creation_time" ) ).orNull.values.head.self
 
-      println( content )
-
       content.length mustBe graphVersions.length
       contentTimeStamps.toSet mustBe graphVersionTimeStamps.toSet
     }
