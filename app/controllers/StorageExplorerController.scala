@@ -104,7 +104,7 @@ class StorageExplorerController @Inject() (
 
       case x: Int =>
         logger.debug( "File limit of " + x + " requested, returning " + x + " file(s) in bucket " )
-        g.V( Long.box( bucketid ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).tail( x )
+        g.V( Long.box( bucketid ) ).in( "resource:stored_in" ).in( "resource:has_location" ).has( Constants.TypeKey, "resource:file" ).limit( x )
 
       //      case _ =>
       //        logger.debug( "Wrong input" )
